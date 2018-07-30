@@ -206,6 +206,33 @@ class PlotContainer(object):
         self._minorticks = {}
         self._field_transform = {}
 
+        self.setup_defaults()
+
+    def setup_defaults(self):
+        self._colormaps = defaultdict(lambda: default_cmap)
+        default_cmap = ytcfg.get("yt", "default_colormap")
+        if "config" in ytcfg:
+            for ftype in ytcfg['config']:
+                for field in ytcfg['config'][ftype]:
+                    f = self.data_source._determine_fields((ftype, field))[0]
+                    cfg = ytcfg['config'][ftype][field]
+                    # configure colormap
+                    self._colormaps[f] = cfg.get('cmap', default_cmap)
+
+    @invalidate_plot
+    def _set_log_helper(self, field, log, linthresh=None):
+        print('Got', field, log)
+        if log:
+            if linthresh is not None:
+                if not linthresh > 0.:
+                    raise ValueError('\"linthresh\" must be positive')
+                self._field_transform[field] = symlog_transform
+                self._field_transform[field].func = linthresh
+            else:
+                self._field_transform[field] = log_transform
+        else:
+            self._field_transform[field] = linear_transform
+
     @invalidate_plot
     def set_log(self, field, log, linthresh=None):
         """set a field to log or linear.
@@ -225,16 +252,7 @@ class PlotContainer(object):
         else:
             fields = [field]
         for field in self.data_source._determine_fields(fields):
-            if log:
-                if linthresh is not None:
-                    if not linthresh > 0.:
-                        raise ValueError('\"linthresh\" must be positive')
-                    self._field_transform[field] = symlog_transform
-                    self._field_transform[field].func = linthresh
-                else:
-                    self._field_transform[field] = log_transform
-            else:
-                self._field_transform[field] = linear_transform
+            self._set_log_helper(field, log, linthresh)
         return self
 
     def get_log(self, field):
@@ -663,8 +681,6 @@ class ImagePlotContainer(PlotContainer):
             data_source, figure_size, fontsize)
         self.plots = PlotDictionary(data_source)
         self._callbacks = []
-        self._colormaps = defaultdict(
-            lambda: ytcfg.get("yt", "default_colormap"))
         self._cbar_minorticks = {}
         self._colorbar_label = PlotDictionary(
             self.data_source, lambda: None)
