@@ -209,15 +209,14 @@ class PlotContainer(object):
         self.setup_defaults()
 
     def setup_defaults(self):
-        self._colormaps = defaultdict(lambda: default_cmap)
         default_cmap = ytcfg.get("yt", "default_colormap")
-        if "config" in ytcfg:
-            for ftype in ytcfg['config']:
-                for field in ytcfg['config'][ftype]:
-                    f = self.data_source._determine_fields((ftype, field))[0]
-                    cfg = ytcfg['config'][ftype][field]
-                    # configure colormap
-                    self._colormaps[f] = cfg.get('cmap', default_cmap)
+        self._colormaps = defaultdict(lambda: default_cmap)
+
+        iterator = ytcfg.get_field_config('cmap', default=default_cmap,
+                                          serializer=self.data_source._determine_fields)
+        for ftype, fname, cmap in iterator:
+            f = self.data_source._determine_fields((ftype, fname))[0]
+            self._colormaps[f] = cmap
 
     @invalidate_plot
     def _set_log_helper(self, field, log, linthresh=None):

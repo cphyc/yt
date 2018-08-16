@@ -19,8 +19,10 @@ import os
 import re
 import warnings
 from yt.extern.six.moves import configparser
+from yt.utilities.exceptions import \
+    YTFieldNotFound
 
-SECTION_RE = re.compile('^config\.(?P<fname>\w+)\.(?P<ftype>\w+)$')
+SECTION_RE = re.compile('^config\.(?P<ftype>\w+)\.(?P<fname>\w+)$')
 
 ytcfg_defaults = dict(
     serialize = 'False',
@@ -140,7 +142,31 @@ class YTConfigParser(configparser.ConfigParser, object):
         val = super(YTConfigParser, self).get(section, option, *args, **kwargs)
         return os.path.expanduser(os.path.expandvars(val))
 
-    def get_field_config(self, key, default='none'):
+    def get_field_config(self, key, serializer, default=''):
+        '''Iterate over all the configured fields.
+
+        Parameters
+        ----------
+        key : str
+           Get these items from the configuration file(s).
+        serializer : callable, optional
+           Use this function to determine the exact name of the
+           fields. This function should raise a `YTFieldNotFound` if
+           the field does not exist in the dataset.
+        default : str, optional
+           If provided, use this value as a fallback.
+
+        Returns
+        -------
+        The function returns an iterator where each entry is given
+        (ftype, fname, cfg).
+
+        ftype, fname : str
+           The type and name of the configured field as given in the
+           configuration.
+        cfg : str
+           The value of the configured item.
+        '''
         for section in self.sections():
             # Match lines like
             match = SECTION_RE.match(section)
@@ -149,8 +175,13 @@ class YTConfigParser(configparser.ConfigParser, object):
                 ftype = data['ftype']
                 fname = data['fname']
 
-                cfg = self.get(section, key, fallback=default)
-                yield ftype, fname, cfg
+                try:
+                    ftype, fname = serializer((ftype, fname))[0]
+                    cfg = self.get(section, key, fallback=default)
+                    if cfg != '':
+                        yield ftype, fname, cfg
+                except YTFieldNotFound:
+                    pass
 
 ytcfg = YTConfigParser(ytcfg_defaults)
 ytcfg.read([_OLD_CONFIG_FILE, CURRENT_CONFIG_FILE, 'yt.cfg'])
