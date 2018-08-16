@@ -16,8 +16,11 @@ from __future__ import print_function
 #-----------------------------------------------------------------------------
 
 import os
+import re
 import warnings
 from yt.extern.six.moves import configparser
+
+SECTION_RE = re.compile('^config\.(?P<fname>\w+)\.(?P<ftype>\w+)$')
 
 ytcfg_defaults = dict(
     serialize = 'False',
@@ -136,6 +139,18 @@ class YTConfigParser(configparser.ConfigParser, object):
     def get(self, section, option, *args, **kwargs):
         val = super(YTConfigParser, self).get(section, option, *args, **kwargs)
         return os.path.expanduser(os.path.expandvars(val))
+
+    def get_field_config(self, key, default='none'):
+        for section in self.sections():
+            # Match lines like
+            match = SECTION_RE.match(section)
+            if match:
+                data = match.groupdict()
+                ftype = data['ftype']
+                fname = data['fname']
+
+                cfg = self.get(section, key, fallback=default)
+                yield ftype, fname, cfg
 
 ytcfg = YTConfigParser(ytcfg_defaults)
 ytcfg.read([_OLD_CONFIG_FILE, CURRENT_CONFIG_FILE, 'yt.cfg'])
