@@ -18,6 +18,7 @@ from __future__ import print_function
 import os
 import re
 import warnings
+from collections import defaultdict
 from yt.extern.six.moves import configparser
 from yt.utilities.exceptions import \
     YTFieldNotFound
@@ -140,15 +141,22 @@ class YTConfigParser(configparser.ConfigParser, object):
 
     def get(self, section, option, *args, **kwargs):
         val = super(YTConfigParser, self).get(section, option, *args, **kwargs)
-        return os.path.expanduser(os.path.expandvars(val))
+        if type(val) == str:
+            return os.path.expanduser(os.path.expandvars(val))
+        else:
+            return val
 
-    def get_field_config(self, key, serializer, default=''):
+    def get_field_config(self, keys, serializer, getter, default=None):
         '''Iterate over all the configured fields.
 
         Parameters
         ----------
-        key : str
-           Get these items from the configuration file(s).
+        keys : str list
+           Get these items from the configuration.
+        getter : dict
+           What getter to use for each key. Can be any of 'get',
+           'getboolean', 'getfloat' or 'getint'. See
+           `https://docs.python.org/3.6/library/configparser.html#configparser.ConfigParser.get`.
         serializer : callable, optional
            Use this function to determine the exact name of the
            fields. This function should raise a `YTFieldNotFound` if
@@ -167,6 +175,14 @@ class YTConfigParser(configparser.ConfigParser, object):
         cfg : str
            The value of the configured item.
         '''
+
+        # Check input values
+        ok_values = ('get', 'getboolean', 'getfloat', 'getint')
+        for key, val in getter.items():
+            if val not in ok_values:
+                raise Exception("Expected one of %s, got `%s'" % (ok_values, val))
+
+        default = default if default else defaultdict(lambda: '')
         for section in self.sections():
             # Match lines like
             match = SECTION_RE.match(section)
@@ -177,9 +193,11 @@ class YTConfigParser(configparser.ConfigParser, object):
 
                 try:
                     ftype, fname = serializer((ftype, fname))[0]
-                    cfg = self.get(section, key, fallback=default)
-                    if cfg != '':
-                        yield ftype, fname, cfg
+                    for key in keys:
+                        _get = getattr(self, getter[key])
+                        value = _get(section, key, fallback=default[key])
+                        if value != '':
+                            yield (ftype, fname), key, value
                 except YTFieldNotFound:
                     pass
 
