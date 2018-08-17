@@ -153,14 +153,13 @@ class YTConfigParser(configparser.ConfigParser, object):
         ----------
         keys : str list
            Get these items from the configuration.
-        getter : dict
-           What getter to use for each key. Can be any of 'get',
-           'getboolean', 'getfloat' or 'getint'. See
-           `https://docs.python.org/3.6/library/configparser.html#configparser.ConfigParser.get`.
-        serializer : callable, optional
+        serializer : callable
            Use this function to determine the exact name of the
            fields. This function should raise a `YTFieldNotFound` if
            the field does not exist in the dataset.
+        getter : dict
+           What getter to use for each key. Can be any of 'get',
+           'getboolean', 'getfloat' or 'getint'. See note.
         default : str, optional
            If provided, use this value as a fallback.
 
@@ -174,6 +173,13 @@ class YTConfigParser(configparser.ConfigParser, object):
            configuration.
         cfg : str
            The value of the configured item.
+
+        Note
+        ----
+        The getter is the function used to access the configuration. It can any listed in
+        `https://docs.python.org/3.6/library/configparser.html#configparser.ConfigParser.get`.
+
+        For example `getfloat` will return float values and `getint` int values.
         '''
 
         # Check input values
