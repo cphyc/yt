@@ -137,7 +137,7 @@ class YTConfigParser(configparser.ConfigParser, object):
         self.set(key[0], key[1], val)
 
     def __getitem__(self, key):
-        self.get(key[0], key[1])
+        return self.get(key[0], key[1])
 
     def get(self, section, option, *args, **kwargs):
         val = super(YTConfigParser, self).get(section, option, *args, **kwargs)
