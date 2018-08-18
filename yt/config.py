@@ -19,6 +19,7 @@ import os
 import re
 import warnings
 from collections import defaultdict
+from six.moves.configparser import NoOptionError
 from yt.extern.six.moves import configparser
 from yt.utilities.exceptions import \
     YTFieldNotFound
@@ -201,7 +202,10 @@ class YTConfigParser(configparser.ConfigParser, object):
                     ftype, fname = serializer((ftype, fname))[0]
                     for key in keys:
                         _get = getattr(self, getter[key])
-                        value = _get(section, key, fallback=default[key])
+                        try:
+                            value = _get(section, key)
+                        except NoOptionError:
+                            value = default[key]
                         if value != '':
                             yield (ftype, fname), key, value
                 except YTFieldNotFound:
