@@ -296,10 +296,12 @@ class PlotWindow(ImagePlotContainer):
                         # Try to get specific integration unit
                         path_length_unit = ytcfg.get(
                             ('config', *field, 'path_length_unit'))
+
                         # Else get per-field-type integration unit
                         if path_length_unit is None:
                             path_length_unit = ytcfg.get(
-                                ('config', field[0], 'path_length_unit'), default=None)
+                                ('config', field[0], 'path_length_unit')
+)
                         # Fallback on unit from dataset
                         if path_length_unit is None:
                             ax_name = 'xyz'[self.data_source.axis]
