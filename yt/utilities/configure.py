@@ -1,4 +1,4 @@
-# -*- coding: UTF-8 -*-
+# -*- coding: utf-8 -*-
 #-----------------------------------------------------------------------------
 # Copyright (c) 2016, yt Development Team.
 #
@@ -11,10 +11,11 @@ import os
 import shutil
 import sys
 import argparse
-from yt.config import CURRENT_CONFIG_FILE, _OLD_CONFIG_FILE, YTConfigParser
+from yt.config import CURRENT_CONFIG_FILE, _OLD_CONFIG_FILE, YTConfig
+import pytoml as toml
 
-CONFIG = YTConfigParser()
-CONFIG.read([CURRENT_CONFIG_FILE])
+CONFIG = YTConfig()
+CONFIG.read(CURRENT_CONFIG_FILE)
 
 
 def get_config(section, option):
@@ -22,8 +23,8 @@ def get_config(section, option):
 
 
 def set_config(section, option, value):
-    if not CONFIG.has_section(section):
-        CONFIG.add_section(section)
+    if section not in CONFIG:
+        CONFIG[section] = {}
     CONFIG.set(section, option, value)
     write_config()
 
