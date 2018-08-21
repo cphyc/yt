@@ -18,62 +18,63 @@ from __future__ import print_function
 import os
 import re
 import warnings
-from collections import defaultdict
-from six.moves.configparser import NoOptionError
+from collections import defaultdict, Mapping
+# from six.moves.configparser import NoOptionError
 from yt.extern.six.moves import configparser
+import pytoml as toml
 from yt.utilities.exceptions import \
     YTFieldNotFound
 
 SECTION_RE = re.compile('^config\.(?P<ftype>\w+)\.(?P<fname>\w+)$')
 
 ytcfg_defaults = dict(
-    serialize = 'False',
-    onlydeserialize = 'False',
-    timefunctions = 'False',
-    logfile = 'False',
-    coloredlogs = 'False',
-    suppressstreamlogging = 'False',
-    stdoutStreamLogging = 'False',
-    loglevel = '20',
-    inline = 'False',
-    numthreads = '-1',
-    __withintesting = 'False',
-    __parallel = 'False',
-    __global_parallel_rank = '0',
-    __global_parallel_size = '1',
-    __topcomm_parallel_rank = '0',
-    __topcomm_parallel_size = '1',
-    __command_line = 'False',
-    storeparameterfiles = 'False',
+    serialize = False,
+    onlydeserialize = False,
+    timefunctions = False,
+    logfile = False,
+    coloredlogs = False,
+    suppressStreamLogging = False,
+    stdoutStreamLogging = False,
+    loglevel = 20,
+    inline = False,
+    numthreads = -1,
+    __withintesting = False,
+    __parallel = False,
+    __global_parallel_rank = 0,
+    __global_parallel_size = 1,
+    __topcomm_parallel_rank = 0,
+    __topcomm_parallel_size = 1,
+    __command_line = False,
+    storeparameterfiles = False,
     parameterfilestore = 'parameter_files.csv',
-    maximumstoreddatasets = '500',
-    skip_dataset_cache = 'True',
-    loadfieldplugins = 'True',
+    maximumstoreddatasets = 500,
+    skip_dataset_cache = True,
+    loadfieldplugins = True,
     pluginfilename = 'my_plugins.py',
-    parallel_traceback = 'False',
+    parallel_traceback = False,
     pasteboard_repo = '',
-    reconstruct_index = 'True',
+    reconstruct_index = True,
     test_storage_dir = '/does/not/exist',
     test_data_dir = '/does/not/exist',
-    requires_ds_strict = 'False',
+    requires_ds_strict = False,
     enzo_db = '',
     hub_url = 'https://girder.hub.yt/api/v1',
     hub_api_key = '',
     hub_sandbox = '/collection/yt_sandbox/data',
     notebook_password = '',
-    answer_testing_tolerance = '3',
-    answer_testing_bitwise = 'False',
+    answer_testing_tolerance = 3,
+    answer_testing_bitwise = False,
     gold_standard_filename = 'gold311',
     local_standard_filename = 'local001',
     answer_tests_url = 'http://answers.yt-project.org/{1}_{2}',
-    sketchfab_api_key = 'None',
+    sketchfab_api_key = None,
     imagebin_api_key = 'e1977d9195fe39e',
     imagebin_upload_url = 'https://api.imgur.com/3/upload',
     imagebin_delete_url = 'https://api.imgur.com/3/image/{delete_hash}',
     curldrop_upload_url = 'http://use.yt/upload',
-    thread_field_detection = 'False',
-    ignore_invalid_unit_operation_errors = 'False',
-    chunk_size = '1000',
+    thread_field_detection = False,
+    ignore_invalid_unit_operation_errors = False,
+    chunk_size = 1000,
     xray_data_dir = '/does/not/exist',
     supp_data_dir = '/does/not/exist',
     default_colormap = 'arbre',
@@ -88,7 +89,7 @@ if not os.path.exists(CONFIG_DIR):
     except OSError:
         warnings.warn("unable to create yt config directory")
 
-CURRENT_CONFIG_FILE = os.path.join(CONFIG_DIR, 'ytrc')
+CURRENT_CONFIG_FILE = os.path.join(CONFIG_DIR, 'yt.toml')
 _OLD_CONFIG_FILE = os.path.join(os.path.expanduser('~'), '.yt', 'config')
 
 # Here is the upgrade.  We're actually going to parse the file in its entirety
@@ -126,96 +127,118 @@ if os.path.exists(_OLD_CONFIG_FILE):
 
 if not os.path.exists(CURRENT_CONFIG_FILE):
     cp = configparser.ConfigParser()
-    cp.add_section("yt")
+    cp = {'yt': {}}
     try:
         with open(CURRENT_CONFIG_FILE, 'w') as new_cfg:
-            cp.write(new_cfg)
+            toml.dump(cp, new_cfg)
     except IOError:
         warnings.warn("unable to write new config file")
 
-class YTConfigParser(configparser.ConfigParser, object):
-    def __setitem__(self, key, val):
-        self.set(key[0], key[1], val)
+# class YTConfigParser(configparser.ConfigParser, object):
+#     def __setitem__(self, key, val):
+#         self.set(key[0], key[1], val)
 
-    def __getitem__(self, key):
-        return self.get(key[0], key[1])
+#     def __getitem__(self, key):
+#         return self.get(key[0], key[1])
 
-    def get(self, section, option, *args, **kwargs):
-        val = super(YTConfigParser, self).get(section, option, *args, **kwargs)
-        if type(val) == str:
-            return os.path.expanduser(os.path.expandvars(val))
+#     def get(self, section, option, *args, **kwargs):
+#         val = super(YTConfigParser, self).get(section, option, *args, **kwargs)
+#         if type(val) == str:
+#             return os.path.expanduser(os.path.expandvars(val))
+#         else:
+#             return val
+
+#     def get_field_config(self, keys, serializer, getter, default=None):
+#         '''Iterate over all the configured fields.
+
+#         Parameters
+#         ----------
+#         keys : str list
+#            Get these items from the configuration.
+#         serializer : callable
+#            Use this function to determine the exact name of the
+#            fields. This function should raise a `YTFieldNotFound` if
+#            the field does not exist in the dataset.
+#         getter : dict
+#            What getter to use for each key. Can be any of 'get',
+#            'getboolean', 'getfloat' or 'getint'. See note.
+#         default : str, optional
+#            If provided, use this value as a fallback.
+
+#         Returns
+#         -------
+#         The function returns an iterator where each entry is given
+#         (ftype, fname, cfg).
+
+#         ftype, fname : str
+#            The type and name of the configured field as given in the
+#            configuration.
+#         cfg : str
+#            The value of the configured item.
+
+#         Note
+#         ----
+#         The getter is the function used to access the configuration. It can any listed in
+#         `https://docs.python.org/3.6/library/configparser.html#configparser.ConfigParser.get`.
+
+#         For example `getfloat` will return float values and `getint` int values.
+#         '''
+
+#         # Check input values
+#         ok_values = ('get', 'getboolean', 'getfloat', 'getint')
+#         for key, val in getter.items():
+#             if val not in ok_values:
+#                 raise Exception("Expected one of %s, got `%s'" % (ok_values, val))
+
+#         default = default if default else defaultdict(lambda: '')
+#         for section in self.sections():
+#             # Match lines like
+#             match = SECTION_RE.match(section)
+#             if match:
+#                 data = match.groupdict()
+#                 ftype = data['ftype']
+#                 fname = data['fname']
+
+#                 try:
+#                     ftype, fname = serializer((ftype, fname))[0]
+#                     for key in keys:
+#                         _get = getattr(self, getter[key])
+#                         try:
+#                             value = _get(section, key)
+#                         except NoOptionError:
+#                             value = default[key]
+#                         if value != '':
+#                             yield (ftype, fname), key, value
+#                 except YTFieldNotFound:
+#                     pass
+
+def deep_update(d, u):
+    for k, v in u.items():
+        if isinstance(v, Mapping):
+            d[k] = deep_update(d.get(k, {}), v)
         else:
-            return val
+            d[k] = v
+    return d
 
-    def get_field_config(self, keys, serializer, getter, default=None):
-        '''Iterate over all the configured fields.
+class YTConfig(dict):
+    def __getitem__(self, keys):
+        if type(keys) == str:
+            return super(YTConfig, self).__getitem__(keys)
+        else:
+            node = super(YTConfig, self).__getitem__(keys[0])
+            for i in range(len(keys)-1):
+                node = node[keys[i+1]]
 
-        Parameters
-        ----------
-        keys : str list
-           Get these items from the configuration.
-        serializer : callable
-           Use this function to determine the exact name of the
-           fields. This function should raise a `YTFieldNotFound` if
-           the field does not exist in the dataset.
-        getter : dict
-           What getter to use for each key. Can be any of 'get',
-           'getboolean', 'getfloat' or 'getint'. See note.
-        default : str, optional
-           If provided, use this value as a fallback.
+            return node
 
-        Returns
-        -------
-        The function returns an iterator where each entry is given
-        (ftype, fname, cfg).
+    def update(self, other):
+        deep_update(self, other)
 
-        ftype, fname : str
-           The type and name of the configured field as given in the
-           configuration.
-        cfg : str
-           The value of the configured item.
-
-        Note
-        ----
-        The getter is the function used to access the configuration. It can any listed in
-        `https://docs.python.org/3.6/library/configparser.html#configparser.ConfigParser.get`.
-
-        For example `getfloat` will return float values and `getint` int values.
-        '''
-
-        # Check input values
-        ok_values = ('get', 'getboolean', 'getfloat', 'getint')
-        for key, val in getter.items():
-            if val not in ok_values:
-                raise Exception("Expected one of %s, got `%s'" % (ok_values, val))
-
-        default = default if default else defaultdict(lambda: '')
-        for section in self.sections():
-            # Match lines like
-            match = SECTION_RE.match(section)
-            if match:
-                data = match.groupdict()
-                ftype = data['ftype']
-                fname = data['fname']
-
-                try:
-                    ftype, fname = serializer((ftype, fname))[0]
-                    for key in keys:
-                        _get = getattr(self, getter[key])
-                        try:
-                            value = _get(section, key)
-                        except NoOptionError:
-                            value = default[key]
-                        if value != '':
-                            yield (ftype, fname), key, value
-                except YTFieldNotFound:
-                    pass
-
-ytcfg = YTConfigParser(ytcfg_defaults)
-ytcfg.read([_OLD_CONFIG_FILE, CURRENT_CONFIG_FILE, 'yt.cfg'])
-if not ytcfg.has_section("yt"):
-    ytcfg.add_section("yt")
-
+ytcfg = YTConfig({'yt': ytcfg_defaults})
+for fname in (_OLD_CONFIG_FILE, CURRENT_CONFIG_FILE, 'yt.cfg'):
+    if os.path.exists(fname):
+        with open(fname, 'r') as f:
+            ytcfg.update(toml.load(f))
 # Now we have parsed the config file.  Overrides come from the command line.
 
 # This should be implemented at some point.  The idea would be to have a set of
