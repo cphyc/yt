@@ -1,4 +1,4 @@
-# -*- coding: UTF-8 -*-
+# -*- coding: utf-8 -*-
 #-----------------------------------------------------------------------------
 # Copyright (c) 2016, yt Development Team.
 #
@@ -54,8 +54,8 @@ def setUpModule():
 
             if cfgfile == CURRENT_CONFIG_FILE:
                 yt.utilities.configure.CONFIG = YTConfigParser()
-                if not yt.utilities.configure.CONFIG.has_section('yt'):
-                    yt.utilities.configure.CONFIG.add_section('yt')
+                if 'yt' not in yt.utilities.configure.CONFIG:
+                    yt.utilities.configure.CONFIG['yt'] = {}
 
 
 def tearDownModule():

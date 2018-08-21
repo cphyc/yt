@@ -11,22 +11,19 @@ Tests for yt.config
 from nose.tools import assert_equal
 from unittest import TestCase
 
-from yt.config import YTConfigParser, ytcfg_defaults
+from yt.config import YTConfig, ytcfg_defaults
 import os
 
 class ConfigTest(TestCase):
     @classmethod
     def setupClass(cls):
         # Create new configuration
-        cls.cfg = YTConfigParser(ytcfg_defaults)
-        cls.cfg.add_section('yt')
-        cls.cfg.set('yt', 'dummy', '')
+        cls.cfg = YTConfig({'yt': ytcfg_defaults})
+        cls.cfg.update({'yt': {'dummy': ''}})
 
-        cls.cfg.add_section('config.foo.bar1')
-        cls.cfg.set('config.foo.bar1', 'cmap', 'viridis')
-
-        cls.cfg.add_section('config.foo.bar2')
-        cls.cfg.set('config.foo.bar2', 'log', 'False')
+        cls.cfg.update({'config':
+                        {'foo': {'bar1': {'cmap': 'viridis'},
+                                 'bar2': {'log': False}}}})
 
     def test_variable_expansion(self):
         '''Test variables are correctly expanded'''
@@ -34,10 +31,10 @@ class ConfigTest(TestCase):
         # Check that the path are correctly expanded
         test_paths = ('~/test/path', '$HOME/test/path')
         for test_path in test_paths:
-            cfg.set('yt', 'dummy', test_path)
+            cfg['yt', 'dummy'] = test_path
 
             expected = os.path.expanduser(os.path.expandvars(test_path))
-            answer = cfg.get('yt', 'dummy')
+            answer = cfg.get(('yt', 'dummy'))
 
             assert_equal(expected, answer)
 
@@ -45,7 +42,7 @@ class ConfigTest(TestCase):
         '''Test objects getter/setter using dict-like syntax'''
         cfg = self.cfg
         for key in ytcfg_defaults.keys():
-            assert_equal(cfg['yt', key], cfg.get('yt', key))
+            assert_equal(cfg['yt', key], cfg.get(('yt', key)))
 
         cfg['yt', 'dummy'] = 'bar'
         assert_equal(cfg['yt', 'dummy'], 'bar')
