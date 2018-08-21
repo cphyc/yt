@@ -12,7 +12,6 @@ import shutil
 import sys
 import argparse
 from yt.config import CURRENT_CONFIG_FILE, _OLD_CONFIG_FILE, YTConfig
-import pytoml as toml
 
 CONFIG = YTConfig()
 CONFIG.read(CURRENT_CONFIG_FILE)
