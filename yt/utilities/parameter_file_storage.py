@@ -68,7 +68,7 @@ class ParameterFileStore(object):
 
         """
         if self._register is False: return
-        if ytcfg.getboolean("yt", "StoreParameterFiles"):
+        if ytcfg["yt", "StoreParameterFiles"]:
             self._read_only = False
             self.init_db()
             self._records = self.read_db()
@@ -93,7 +93,7 @@ class ParameterFileStore(object):
         # these will be broadcast
 
     def _get_db_name(self):
-        base_file_name = ytcfg.get("yt", "ParameterFileStore")
+        base_file_name = ytcfg["yt", "ParameterFileStore"]
         if not os.access(os.path.expanduser("~/"), os.W_OK):
             return os.path.abspath(base_file_name)
         return os.path.expanduser("~/.yt/%s" % base_file_name)
@@ -182,7 +182,7 @@ class ParameterFileStore(object):
         fn = self._get_db_name()
         f = open("%s.tmp" % fn, 'wb')
         w = csv.DictWriter(f, _field_names)
-        maxn = ytcfg.getint("yt","maximumstoreddatasets") # number written
+        maxn = ytcfg["yt","maximumstoreddatasets"] # number written
         for h,v in islice(sorted(self._records.items(),
                           key=lambda a: -a[1]['last_seen']), 0, maxn):
             v['hash'] = h
@@ -211,7 +211,7 @@ class EnzoRunDatabase(object):
 
     def __init__(self, path = None):
         if path is None:
-            path = ytcfg.get("yt", "enzo_db")
+            path = ytcfg["yt", "enzo_db"]
             if len(path) == 0:
                 raise RuntimeError
         import sqlite3

@@ -626,7 +626,7 @@ def test_streamline_callback():
             p = SlicePlot(ds, ax, "density")
             p.annotate_streamlines("velocity_x", "velocity_y", field_color="magvel",
                                    display_threshold=0.5,
-                                   plot_args={'cmap': ytcfg.get("yt", "default_colormap"),
+                                   plot_args={'cmap': ytcfg["yt", "default_colormap"],
                                               'arrowstyle': '->'})
             assert_fname(p.save(prefix)[0])
 
@@ -667,7 +667,7 @@ def test_line_integral_convolution_callback():
         p = SlicePlot(ds, "x", "density")
         p.annotate_line_integral_convolution("velocity_x", "velocity_y",
                                              kernellen=100., lim=(0.4,0.7),
-                                             cmap=ytcfg.get("yt", "default_colormap"),
+                                             cmap=ytcfg["yt", "default_colormap"],
                                              alpha=0.9, const_alpha=True)
         p.save(prefix)
 

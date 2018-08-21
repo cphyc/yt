@@ -43,11 +43,11 @@ def add_coloring_to_emit_ansi(fn):
         return fn(*args)
     return new
 
-level = min(max(ytcfg.getint("yt", "loglevel"), 0), 50)
+level = min(max(ytcfg['yt', 'loglevel'], 0), 50)
 ufstring = "%(name)-3s: [%(levelname)-9s] %(asctime)s %(message)s"
 cfstring = "%(name)-3s: [%(levelname)-18s] %(asctime)s %(message)s"
 
-if ytcfg.getboolean("yt", "stdoutStreamLogging"):
+if ytcfg["yt", "stdoutStreamLogging"]:
     stream = sys.stdout
 else:
     stream = sys.stderr
@@ -76,7 +76,7 @@ def uncolorize_logging():
         # to uncolorize
         pass
 
-if ytcfg.getboolean("yt", "suppressStreamLogging"):
+if ytcfg["yt", "suppressStreamLogging"]:
     disable_stream_logging()
 else:
     yt_sh = logging.StreamHandler(stream=stream)
@@ -90,7 +90,7 @@ else:
 
     original_emitter = yt_sh.emit
 
-    if ytcfg.getboolean("yt", "coloredlogs"):
+    if ytcfg["yt", "coloredlogs"]:
         colorize_logging()
 
 ytLogger.debug("Set log level to %s", level)

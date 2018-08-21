@@ -452,7 +452,7 @@ class YTQuadTreeProj(YTProj):
         self._mrep.upload()
 
     def deserialize(self, fields):
-        if not ytcfg.getboolean("yt", "serialize"):
+        if not ytcfg["yt", "serialize"]:
             return False
         for field in fields:
             self[field] = None
@@ -471,7 +471,7 @@ class YTQuadTreeProj(YTProj):
         return deserialized_successfully
 
     def serialize(self):
-        if not ytcfg.getboolean("yt", "serialize"):
+        if not ytcfg["yt", "serialize"]:
             return
         self._mrep.store(self.ds.parameter_filename + '.yt')
 
@@ -1531,7 +1531,7 @@ class YTSurface(YTSelectionContainer3D):
 
         """
         if color_map is None:
-            color_map = ytcfg.get("yt", "default_colormap")
+            color_map = ytcfg["yt", "default_colormap"]
         if self.vertices is None:
             if color_field is not None:
                 self.get_data(color_field,"face")
@@ -1611,7 +1611,7 @@ class YTSurface(YTSelectionContainer3D):
                     color_field_max = None, color_field_min = None,
                     emit_field_max = None, emit_field_min = None):
         if color_map is None:
-            color_map = ytcfg.get("yt", "default_colormap")
+            color_map = ytcfg["yt", "default_colormap"]
         if plot_index is None:
             plot_index = 0
         if isinstance(filename, io.IOBase):
@@ -1780,7 +1780,7 @@ class YTSurface(YTSelectionContainer3D):
 
         """
         if color_map is None:
-            color_map = ytcfg.get("yt", "default_colormap")
+            color_map = ytcfg["yt", "default_colormap"]
         if self.vertices is None:
             if color_field is not None:
                 self.get_data(color_field,"face")
@@ -1805,7 +1805,7 @@ class YTSurface(YTSelectionContainer3D):
                     color_field_max = None, color_field_min = None,
                     emit_field_max = None, emit_field_min = None):
         if color_map is None:
-            color_map = ytcfg.get("yt", "default_colormap")
+            color_map = ytcfg["yt", "default_colormap"]
         if plot_index is None:
             plot_index = 0
         ftype = [("cind", "uint8"), ("emit", "float")]
@@ -1883,7 +1883,7 @@ class YTSurface(YTSelectionContainer3D):
         >>> surf.export_ply("my_galaxy.ply", bounds = bounds)
         """
         if color_map is None:
-            color_map = ytcfg.get("yt", "default_colormap")
+            color_map = ytcfg["yt", "default_colormap"]
         if self.vertices is None:
             self.get_data(color_field, sample_type, no_ghost=no_ghost)
         elif color_field is not None:
@@ -1910,7 +1910,7 @@ class YTSurface(YTSelectionContainer3D):
     def _export_ply(self, filename, bounds = None, color_field = None,
                    color_map = None, color_log = True, sample_type = "face"):
         if color_map is None:
-            color_map = ytcfg.get("yt", "default_colormap")
+            color_map = ytcfg["yt", "default_colormap"]
         if hasattr(filename, 'read'):
             f = filename
         else:
@@ -2037,8 +2037,8 @@ class YTSurface(YTSelectionContainer3D):
         ...
         """
         if color_map is None:
-            color_map = ytcfg.get("yt", "default_colormap")
-        api_key = api_key or ytcfg.get("yt","sketchfab_api_key")
+            color_map = ytcfg["yt", "default_colormap"]
+        api_key = api_key or ytcfg["yt","sketchfab_api_key"]
         if api_key in (None, "None"):
             raise YTNoAPIKey("SketchFab.com", "sketchfab_api_key")
 

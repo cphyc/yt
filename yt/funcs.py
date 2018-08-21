@@ -185,7 +185,7 @@ def time_execution(func):
         mylog.debug('%s took %0.3f s', func.__name__, (t2-t1))
         return res
     from yt.config import ytcfg
-    if ytcfg.getboolean("yt","timefunctions") is True:
+    if ytcfg["yt","timefunctions"] is True:
         return wrapper
     else:
         return func
@@ -226,14 +226,14 @@ def rootonly(func):
     from yt.config import ytcfg
     @wraps(func)
     def check_parallel_rank(*args, **kwargs):
-        if ytcfg.getint("yt","__topcomm_parallel_rank") > 0:
+        if ytcfg["yt","__topcomm_parallel_rank"] > 0:
             return
         return func(*args, **kwargs)
     return check_parallel_rank
 
 def rootloginfo(*args):
     from yt.config import ytcfg
-    if ytcfg.getint("yt", "__topcomm_parallel_rank") > 0: return
+    if ytcfg["yt", "__topcomm_parallel_rank"] > 0: return
     mylog.info(*args)
 
 class VisibleDeprecationWarning(UserWarning):
@@ -390,11 +390,11 @@ def get_pbar(title, maxval, parallel=False):
     """
     maxval = max(maxval, 1)
     from yt.config import ytcfg
-    if ytcfg.getboolean("yt", "suppressStreamLogging") or \
-       ytcfg.getboolean("yt", "__withintesting") or \
+    if ytcfg["yt", "suppressStreamLogging"] or \
+       ytcfg["yt", "__withintesting"] or \
        maxval == 1: \
         return DummyProgressBar()
-    elif ytcfg.getboolean("yt", "__parallel"):
+    elif ytcfg["yt", "__parallel"]:
         # If parallel is True, update progress on root only.
         if parallel:
             if is_root():
@@ -417,9 +417,9 @@ def only_on_root(func, *args, **kwargs):
         cfg_option = "__global_parallel_rank"
     else:
         cfg_option = "__topcomm_parallel_rank"
-    if not ytcfg.getboolean("yt","__parallel"):
+    if not ytcfg["yt","__parallel"]:
         return func(*args,**kwargs)
-    if ytcfg.getint("yt", cfg_option) > 0: return
+    if ytcfg["yt", cfg_option] > 0: return
     return func(*args, **kwargs)
 
 def is_root():
@@ -429,9 +429,9 @@ def is_root():
     """
     from yt.config import ytcfg
     cfg_option = "__topcomm_parallel_rank"
-    if not ytcfg.getboolean("yt","__parallel"):
+    if not ytcfg["yt","__parallel"]:
         return True
-    if ytcfg.getint("yt", cfg_option) > 0:
+    if ytcfg["yt", cfg_option] > 0:
         return False
     return True
 
@@ -799,8 +799,8 @@ def parallel_profile(prefix):
     import cProfile
     from yt.config import ytcfg
     fn = "%s_%04i_%04i.cprof" % (prefix,
-                ytcfg.getint("yt", "__topcomm_parallel_size"),
-                ytcfg.getint("yt", "__topcomm_parallel_rank"))
+                ytcfg["yt", "__topcomm_parallel_size"],
+                ytcfg["yt", "__topcomm_parallel_rank"])
     p = cProfile.Profile()
     p.enable()
     yield fn
@@ -809,7 +809,7 @@ def parallel_profile(prefix):
 
 def get_num_threads():
     from .config import ytcfg
-    nt = ytcfg.getint("yt","numthreads")
+    nt = ytcfg["yt","numthreads"]
     if nt < 0:
         return os.environ.get("OMP_NUM_THREADS", 0)
     return nt
@@ -984,7 +984,7 @@ def enable_plugins():
     import yt
     from yt.fields.my_plugin_fields import my_plugins_fields
     from yt.config import ytcfg, CONFIG_DIR
-    my_plugin_name = ytcfg.get("yt", "pluginfilename")
+    my_plugin_name = ytcfg["yt", "pluginfilename"]
 
     # In the following order if pluginfilename is: an absolute path, located in
     # the CONFIG_DIR, located in an obsolete config dir.

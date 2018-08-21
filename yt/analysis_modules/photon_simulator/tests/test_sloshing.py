@@ -30,8 +30,8 @@ def setup():
     from yt.config import ytcfg
     ytcfg["yt", "__withintesting"] = "True"
 
-test_data_dir = ytcfg.get("yt", "test_data_dir")
-xray_data_dir = ytcfg.get("yt", "xray_data_dir")
+test_data_dir = ytcfg["yt", "test_data_dir"]
+xray_data_dir = ytcfg["yt", "xray_data_dir"]
 
 rmfs = ["pn-med.rmf", "acisi_aimpt_cy17.rmf",
         "aciss_aimpt_cy17.rmf", "nustar.rmf",

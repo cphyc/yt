@@ -55,10 +55,10 @@ from yt.utilities.exceptions import \
 
 # loading field plugins for backward compatibility, since this module
 # used to do "from yt.mods import *"
-if ytcfg.getboolean("yt","loadfieldplugins"):
+if ytcfg["yt","loadfieldplugins"]:
     enable_plugins()
 
-_default_colormap = ytcfg.get("yt", "default_colormap")
+_default_colormap = ytcfg["yt", "default_colormap"]
 
 def _fix_ds(arg, *args, **kwargs):
     if os.path.isdir("%s" % arg) and \
@@ -137,16 +137,16 @@ def _get_girder_client():
         import girder_client
     except ImportError:
         raise YTCommandRequiresModule('girder_client')
-    if not ytcfg.get("yt", "hub_api_key"):
+    if not ytcfg["yt", "hub_api_key"]:
         print("Before you can access the yt Hub you need an API key")
         print("In order to obtain one, either register by typing:")
         print("  yt hub register")
         print("or follow the instruction on:")
         print("  http://yt-project.org/docs/dev/sharing_data.html#obtaining-an-api-key")
         sys.exit()
-    hub_url = urlparse(ytcfg.get("yt", "hub_url"))
+    hub_url = urlparse(ytcfg["yt", "hub_url"])
     gc = girder_client.GirderClient(apiUrl=hub_url.geturl())
-    gc.authenticate(apiKey=ytcfg.get("yt", "hub_api_key"))
+    gc.authenticate(apiKey=ytcfg["yt", "hub_api_key"])
     return gc
 
 
@@ -590,7 +590,7 @@ class YTHubRegisterCmd(YTCommand):
             import requests
         except ImportError:
             raise YTCommandRequiresModule('requests')
-        if ytcfg.get("yt", "hub_api_key") != "":
+        if ytcfg["yt", "hub_api_key"] != "":
             print("You seem to already have an API key for the hub in")
             print("{} . Delete this if you want to force a".format(CURRENT_CONFIG_FILE))
             print("new user registration.")
@@ -635,7 +635,7 @@ class YTHubRegisterCmd(YTCommand):
 
         data = dict(firstName=first_name, email=email, login=username,
                     password=password1, lastName=last_name, admin=False)
-        hub_url = ytcfg.get("yt", "hub_url")
+        hub_url = ytcfg["yt", "hub_url"]
         req = requests.post(hub_url + "/user", data=data)
 
         if req.ok:
@@ -846,7 +846,7 @@ class YTPastebinGrabCmd(YTCommand):
 
 class YTHubStartNotebook(YTCommand):
     args = (
-        dict(dest="folderId", default=ytcfg.get("yt", "hub_sandbox"),
+        dict(dest="folderId", default=ytcfg["yt", "hub_sandbox"],
              nargs="?",
              help="(Optional) Hub folder to mount inside the Notebook"),
     )
@@ -887,7 +887,7 @@ class YTNotebookUploadCmd(YTCommand):
         _id = gc.resourceLookup(
             "/user/{}/Public/{}".format(username, args.file))["_id"]
         _fid = next(gc.listFile(_id))["_id"]
-        hub_url = urlparse(ytcfg.get("yt", "hub_url"))
+        hub_url = urlparse(ytcfg["yt", "hub_url"])
         print("Upload successful!")
         print()
         print("To access your raw notebook go here:")
@@ -1020,7 +1020,7 @@ class YTNotebookCmd(YTCommand):
 
         print("You must choose a password so that others cannot connect to "
               "your notebook.")
-        pw = ytcfg.get("yt", "notebook_password")
+        pw = ytcfg["yt", "notebook_password"]
         if len(pw) == 0 and not args.no_password:
             import IPython.lib
             pw = IPython.lib.passwd()
@@ -1133,9 +1133,9 @@ class YTDeleteImageCmd(YTCommand):
     name = "delete_image"
     def __call__(self, args):
         headers = {'Authorization':
-            'Client-ID {}'.format(ytcfg.get("yt", "imagebin_api_key"))}
+            'Client-ID {}'.format(ytcfg["yt", "imagebin_api_key"])}
 
-        delete_url = ytcfg.get("yt", "imagebin_delete_url")
+        delete_url = ytcfg["yt", "imagebin_delete_url"]
         req = urllib.request.Request(
             delete_url.format(delete_hash=args.delete_hash),
             headers=headers, method='DELETE')
@@ -1169,7 +1169,7 @@ class YTUploadImageCmd(YTCommand):
             print("File must be a PNG file!")
             return 1
         headers = {'Authorization':
-            'Client-ID {}'.format(ytcfg.get("yt", "imagebin_api_key"))}
+            'Client-ID {}'.format(ytcfg["yt", "imagebin_api_key"])}
 
         image_data = base64.b64encode(open(filename, 'rb').read())
         parameters = {'image': image_data, type: 'base64',
@@ -1177,7 +1177,7 @@ class YTUploadImageCmd(YTCommand):
                       'title': "%s uploaded by yt" % filename}
         data = urllib.parse.urlencode(parameters).encode('utf-8')
         req = urllib.request.Request(
-            ytcfg.get("yt", "imagebin_upload_url"), data=data, headers=headers)
+            ytcfg["yt", "imagebin_upload_url"], data=data, headers=headers)
         try:
             response = urllib.request.urlopen(req).read().decode()
         except urllib.error.HTTPError as e:
@@ -1215,7 +1215,7 @@ class YTUploadFileCmd(YTCommand):
             raise YTCommandRequiresModule('requests')
 
         fs = iter(FileStreamer(open(args.file, 'rb')))
-        upload_url = ytcfg.get("yt", "curldrop_upload_url")
+        upload_url = ytcfg["yt", "curldrop_upload_url"]
         r = requests.put(upload_url + "/" + os.path.basename(args.file),
                          data=fs)
         print()
@@ -1364,7 +1364,7 @@ class YTDownloadData(YTCommand):
                                '--help for details.')
         data_url = "http://yt-project.org/data/%s" % args.filename
         if args.location in ["test_data_dir", "supp_data_dir"]:
-            data_dir = ytcfg.get("yt", args.location)
+            data_dir = ytcfg["yt", args.location]
             if data_dir == "/does/not/exist":
                 raise RuntimeError("'%s' is not configured!" % args.location)
         else:

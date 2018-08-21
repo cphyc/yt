@@ -59,9 +59,9 @@ mylog = logging.getLogger('nose.plugins.answer-testing')
 run_big_data = False
 
 # Set the latest gold and local standard filenames
-_latest = ytcfg.get("yt", "gold_standard_filename")
-_latest_local = ytcfg.get("yt", "local_standard_filename")
-_url_path = ytcfg.get("yt", "answer_tests_url")
+_latest = ytcfg["yt", "gold_standard_filename"]
+_latest_local = ytcfg["yt", "local_standard_filename"]
+_url_path = ytcfg["yt", "answer_tests_url"]
 
 class AnswerTesting(Plugin):
     name = "answer-testing"
@@ -273,7 +273,7 @@ def can_run_ds(ds_fn, file_check = False):
     result_storage = AnswerTestingTest.result_storage
     if isinstance(ds_fn, Dataset):
         return result_storage is not None
-    path = ytcfg.get("yt", "test_data_dir")
+    path = ytcfg["yt", "test_data_dir"]
     if not os.path.isdir(path):
         return False
     if file_check:
@@ -282,7 +282,7 @@ def can_run_ds(ds_fn, file_check = False):
     try:
         load(ds_fn)
     except YTOutputNotIdentified:
-        if ytcfg.getboolean("yt", "requires_ds_strict"):
+        if ytcfg["yt", "requires_ds_strict"]:
             if result_storage is not None:
                 result_storage['tainted'] = True
             raise
@@ -293,7 +293,7 @@ def can_run_sim(sim_fn, sim_type, file_check = False):
     result_storage = AnswerTestingTest.result_storage
     if isinstance(sim_fn, SimulationTimeSeries):
         return result_storage is not None
-    path = ytcfg.get("yt", "test_data_dir")
+    path = ytcfg["yt", "test_data_dir"]
     if not os.path.isdir(path):
         return False
     if file_check:
@@ -302,7 +302,7 @@ def can_run_sim(sim_fn, sim_type, file_check = False):
     try:
         simulation(sim_fn, sim_type)
     except YTOutputNotIdentified:
-        if ytcfg.getboolean("yt", "requires_ds_strict"):
+        if ytcfg["yt", "requires_ds_strict"]:
             if result_storage is not None:
                 result_storage['tainted'] = True
             raise
@@ -312,7 +312,7 @@ def can_run_sim(sim_fn, sim_type, file_check = False):
 def data_dir_load(ds_fn, cls = None, args = None, kwargs = None):
     args = args or ()
     kwargs = kwargs or {}
-    path = ytcfg.get("yt", "test_data_dir")
+    path = ytcfg["yt", "test_data_dir"]
     if isinstance(ds_fn, Dataset): return ds_fn
     if not os.path.isdir(path):
         return False

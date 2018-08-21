@@ -35,7 +35,7 @@ def setup():
     from yt.config import ytcfg
     ytcfg["yt", "__withintesting"] = "True"
 
-xray_data_dir = ytcfg.get("yt", "xray_data_dir")
+xray_data_dir = ytcfg["yt", "xray_data_dir"]
 
 arf = os.path.join(xray_data_dir,"sxt-s_120210_ts02um_intallpxl.arf")
 rmf = os.path.join(xray_data_dir,"ah_sxs_5ev_basefilt_20100712.rmf")

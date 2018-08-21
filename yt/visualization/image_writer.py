@@ -208,7 +208,7 @@ def write_image(image, filename, color_bounds = None, cmap_name = None, func = l
     >>> write_image(frb1["Density"], "saved.png")
     """
     if cmap_name is None:
-        cmap_name = ytcfg.get("yt", "default_colormap")
+        cmap_name = ytcfg["yt", "default_colormap"]
     if len(image.shape) == 3:
         mylog.info("Using only channel 1 of supplied image")
         image = image[:,:,0]
@@ -242,7 +242,7 @@ def apply_colormap(image, color_bounds = None, cmap_name = None, func=lambda x: 
 
     """
     if cmap_name is None:
-        cmap_name = ytcfg.get("yt", "default_colormap")
+        cmap_name = ytcfg["yt", "default_colormap"]
     from yt.data_objects.image_array import ImageArray
     image = ImageArray(func(image))
     if color_bounds is None:
@@ -372,7 +372,7 @@ def write_projection(data, filename, colorbar=True, colorbar_label=None,
                          take_log=True)
     """
     if cmap_name is None:
-        cmap_name = ytcfg.get("yt", "default_colormap")
+        cmap_name = ytcfg["yt", "default_colormap"]
     import matplotlib.figure
     import matplotlib.colors
     from ._mpl_imports import FigureCanvasAgg, FigureCanvasPdf, FigureCanvasPS

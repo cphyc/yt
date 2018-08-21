@@ -515,10 +515,10 @@ class MeshSource(OpaqueSource):
         self.field = field
         self.volume = None
         self.current_image = None
-        self.engine = ytcfg.get("yt", "ray_tracing_engine")
+        self.engine = ytcfg["yt", "ray_tracing_engine"]
 
         # default color map
-        self._cmap = ytcfg.get("yt", "default_colormap")
+        self._cmap = ytcfg["yt", "default_colormap"]
         self._color_bounds = None
 
         # default mesh annotation options
@@ -1170,7 +1170,7 @@ class GridSource(LineSource):
         corners = np.dstack(corners)
         levels = np.array(levels)
         if cmap is None:
-            cmap = ytcfg.get("yt", "default_colormap")
+            cmap = ytcfg["yt", "default_colormap"]
 
         if max_level is not None:
             subset = levels <= max_level

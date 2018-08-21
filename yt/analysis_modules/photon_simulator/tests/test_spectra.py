@@ -8,7 +8,7 @@ from yt.config import ytcfg
 def setup():
     ytcfg["yt", "__withintesting"] = "True"
 
-xray_data_dir = ytcfg.get("yt", "xray_data_dir")
+xray_data_dir = ytcfg["yt", "xray_data_dir"]
 
 ds = fake_random_ds(64)
 

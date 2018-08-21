@@ -727,7 +727,7 @@ class DualEPS(object):
             if plot.cmap is not None:
                 _cmap = plot.cmap.name
         if _cmap is None:
-            _cmap = ytcfg.get("yt", "default_colormap")
+            _cmap = ytcfg["yt", "default_colormap"]
         if isinstance(plot, (PlotWindow, PhasePlot)):
             if isinstance(plot, PlotWindow):
                 try:
@@ -1371,6 +1371,6 @@ def return_cmap(cmap=None, label="", range=(0,1), log=False):
     >>> cb = return_cmap("arbre", "Density [cm$^{-3}$]", (0,10), False)
     """
     if cmap is None:
-        cmap = ytcfg.get("yt", "default_colormap")
+        cmap = ytcfg["yt", "default_colormap"]
     return {'cmap': cmap, 'name': label, 'range': range, 'log': log}
     

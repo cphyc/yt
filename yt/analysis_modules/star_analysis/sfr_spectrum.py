@@ -306,7 +306,7 @@ class SpectrumBuilder(object):
                  star_filter=None):
         self._ds = ds
         if not os.path.isdir(bcdir):
-            bcdir = os.path.join(ytcfg.get("yt", "test_data_dir"), bcdir)
+            bcdir = os.path.join(ytcfg["yt", "test_data_dir"], bcdir)
             if not os.path.isdir(bcdir):
                 raise RuntimeError("Failed to locate %s" % bcdir)
         self.bcdir = bcdir

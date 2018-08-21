@@ -413,7 +413,7 @@ class SZProjection(object):
         >>> szprj.write_png("SZsloshing")
         """
         if cmap_name is None:
-            cmap_name = ytcfg.get("yt", "default_colormap")
+            cmap_name = ytcfg["yt", "default_colormap"]
         
         import matplotlib
         matplotlib.use('Agg')

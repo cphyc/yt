@@ -277,7 +277,7 @@ class Camera(ParallelAnalysisInterface):
 
         """
         if cmap is None:
-            cmap = ytcfg.get("yt", "default_colormap")
+            cmap = ytcfg["yt", "default_colormap"]
         region = self.data_source
         corners = []
         levels = []

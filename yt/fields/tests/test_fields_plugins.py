@@ -50,7 +50,7 @@ class TestPluginFile(unittest.TestCase):
 
     @classmethod
     def setUpClass(cls):
-        my_plugin_name = ytcfg.get('yt', 'pluginfilename')
+        my_plugin_name = ytcfg['yt', 'pluginfilename']
         # In the following order if pluginfilename is: an absolute path, located in
         # the CONFIG_DIR, located in an obsolete config dir.
         old_config_dir = os.path.join(os.path.expanduser('~'), '.yt')
@@ -66,7 +66,7 @@ class TestPluginFile(unittest.TestCase):
 
     @classmethod
     def tearDownClass(cls):
-        my_plugin_name = ytcfg.get('yt', 'pluginfilename')
+        my_plugin_name = ytcfg['yt', 'pluginfilename']
         plugin_file = os.path.join(CONFIG_DIR, my_plugin_name)
         os.remove(plugin_file)
 
@@ -80,7 +80,7 @@ class TestPluginFile(unittest.TestCase):
 
     def testCustomField(self):
         plugin_file = os.path.join(
-            CONFIG_DIR, ytcfg.get('yt', 'pluginfilename'))
+            CONFIG_DIR, ytcfg['yt', 'pluginfilename'])
         msg = 'INFO:yt:Loading plugins from %s' % plugin_file
 
         if sys.version_info >= (3, 4, 0):

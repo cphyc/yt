@@ -352,7 +352,7 @@ class ImageArray(YTArray):
 
         """
         if cmap_name is None:
-            cmap_name = ytcfg.get("yt", "default_colormap")
+            cmap_name = ytcfg["yt", "default_colormap"]
         if filename is not None and filename[-4:] != '.png':
             filename += '.png'
 

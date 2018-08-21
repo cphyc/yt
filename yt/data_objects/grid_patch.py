@@ -35,7 +35,7 @@ from yt.utilities.lib.mesh_utilities import \
 from yt.utilities.nodal_data_utils import \
     get_nodal_slices
 
-RECONSTRUCT_INDEX = bool(ytcfg.get('yt', 'reconstruct_index'))
+RECONSTRUCT_INDEX = bool(ytcfg['yt', 'reconstruct_index'])
 
 class AMRGridPatch(YTSelectionContainer):
     _spatial = True

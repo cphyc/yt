@@ -138,7 +138,7 @@ def upload_to_curldrop(data, filename):
         file_id = datetime.datetime.now().strftime("%Y-%m-%d_%H-%M-%S")
     filename = filename.format(file_id)
 
-    base_url = ytcfg.get("yt", "curldrop_upload_url")
+    base_url = ytcfg["yt", "curldrop_upload_url"]
     upload_url = base_url + "/" + os.path.basename(filename)
     response = requests.put(upload_url, data=data)
     return response

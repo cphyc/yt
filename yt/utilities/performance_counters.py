@@ -36,7 +36,7 @@ class PerformanceCounters(object):
         self.counting = defaultdict(lambda: False)
         self.starttime = defaultdict(lambda: 0)
         self.endtime = defaultdict(lambda: 0)
-        self._on = ytcfg.getboolean("yt", "timefunctions")
+        self._on = ytcfg["yt", "timefunctions"]
         self.exit()
 
     def __call__(self, name):
@@ -117,10 +117,10 @@ class ProfilingController(object):
         return wrapper
 
     def write_out(self, filename_prefix):
-        if ytcfg.getboolean("yt","__parallel"):
+        if ytcfg["yt","__parallel"]:
             pfn = "%s_%03i_%03i" % (filename_prefix,
-                     ytcfg.getint("yt", "__global_parallel_rank"),
-                    ytcfg.getint("yt", "__global_parallel_size"))
+                     ytcfg["yt", "__global_parallel_rank"],
+                    ytcfg["yt", "__global_parallel_size"])
         else:
             pfn = "%s" % (filename_prefix)
         for n, p in sorted(self.profilers.items()):

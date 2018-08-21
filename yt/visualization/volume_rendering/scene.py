@@ -745,7 +745,7 @@ class Scene(object):
 
         """
         if cmap is None:
-            cmap = ytcfg.get("yt", "default_colormap")
+            cmap = ytcfg["yt", "default_colormap"]
         grids = GridSource(data_source, alpha=alpha, cmap=cmap,
                             min_level=min_level, max_level=max_level)
         self.add_source(grids)

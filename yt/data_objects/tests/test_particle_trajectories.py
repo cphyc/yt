@@ -17,7 +17,7 @@ from yt.data_objects.particle_filters import particle_filter
 def setup():
     ytcfg["yt","__withintesting"] = "True"
 
-data_path = ytcfg.get("yt", "test_data_dir")
+data_path = ytcfg["yt", "test_data_dir"]
 
 pfields = ["particle_position_x", "particle_position_y", "particle_position_z"]
 vfields = ["particle_velocity_x", "particle_velocity_y", "particle_velocity_z"]

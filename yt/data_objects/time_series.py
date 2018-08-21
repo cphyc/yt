@@ -75,7 +75,7 @@ def get_ds_prop(propname):
 def get_filenames_from_glob_pattern(filenames):
     file_list = glob.glob(filenames)
     if len(file_list) == 0:
-        data_dir = ytcfg.get("yt", "test_data_dir")
+        data_dir = ytcfg["yt", "test_data_dir"]
         pattern = os.path.join(data_dir, filenames)
         td_filenames = glob.glob(pattern)
         if len(td_filenames) > 0:

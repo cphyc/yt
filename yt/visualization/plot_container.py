@@ -209,7 +209,7 @@ class PlotContainer(object):
         self.setup_defaults()
 
     def setup_defaults(self):
-        default_cmap = ytcfg.get("yt", "default_colormap")
+        default_cmap = ytcfg["yt", "default_colormap"]
         self._colormaps = defaultdict(lambda: default_cmap)
 
         iterator = ytcfg.get_field_config(

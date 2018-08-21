@@ -47,9 +47,9 @@ def load(*args ,**kwargs):
             elif arg.startswith("http"):
                 valid_file.append(True)
             else:
-                if os.path.exists(os.path.join(ytcfg.get("yt", "test_data_dir"), arg)):
+                if os.path.exists(os.path.join(ytcfg["yt", "test_data_dir"], arg)):
                     valid_file.append(True)
-                    args[argno] = os.path.join(ytcfg.get("yt", "test_data_dir"), arg)
+                    args[argno] = os.path.join(ytcfg["yt", "test_data_dir"], arg)
                 else:
                     valid_file.append(False)
         else:
@@ -85,7 +85,7 @@ def load(*args ,**kwargs):
     if len(candidates) == 1:
         return candidates[0](*args, **kwargs)
     if len(candidates) == 0:
-        if ytcfg.get("yt", "enzo_db") != '' \
+        if ytcfg["yt", "enzo_db"] != '' \
            and len(args) == 1 \
            and isinstance(args[0], string_types):
             erdb = EnzoRunDatabase()
@@ -113,9 +113,9 @@ def simulation(parameter_filename, simulation_type, find_outputs=False):
 
     if os.path.exists(parameter_filename):
         valid_file = True
-    elif os.path.exists(os.path.join(ytcfg.get("yt", "test_data_dir"),
+    elif os.path.exists(os.path.join(ytcfg["yt", "test_data_dir"],
                                      parameter_filename)):
-        parameter_filename = os.path.join(ytcfg.get("yt", "test_data_dir"),
+        parameter_filename = os.path.join(ytcfg["yt", "test_data_dir"],
                                           parameter_filename)
         valid_file = True
     else:

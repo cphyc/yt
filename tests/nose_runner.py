@@ -49,7 +49,7 @@ class NoseTask(object):
     def __call__(self):
         old_stderr = sys.stderr
         sys.stderr = mystderr = StringIO()
-        test_dir = ytcfg.get("yt", "test_data_dir")
+        test_dir = ytcfg["yt", "test_data_dir"]
         answers_dir = os.path.join(test_dir, "answers")
         if '--with-answer-testing' in self.argv and \
                 not os.path.isdir(os.path.join(answers_dir, self.name)):
@@ -72,7 +72,7 @@ def generate_tasks_input():
     else:
         DROP_TAG = "py2"
 
-    test_dir = ytcfg.get("yt", "test_data_dir")
+    test_dir = ytcfg["yt", "test_data_dir"]
     answers_dir = os.path.join(test_dir, "answers")
     with open('tests/tests.yaml', 'r') as obj:
         lines = obj.read()

@@ -80,7 +80,7 @@ class ParticleTrajectories(object):
         fields = list(OrderedDict.fromkeys(fields))
 
         if self.suppress_logging:
-            old_level = int(ytcfg.get("yt","loglevel"))
+            old_level = int(ytcfg["yt","loglevel"])
             mylog.setLevel(40)
         ds_first = self.data_series[0]
         dd_first = ds_first.all_data()
@@ -223,7 +223,7 @@ class ParticleTrajectories(object):
             return
 
         if self.suppress_logging:
-            old_level = int(ytcfg.get("yt","loglevel"))
+            old_level = int(ytcfg["yt","loglevel"])
             mylog.setLevel(40)
         ds_first = self.data_series[0]
         dd_first = ds_first.all_data()

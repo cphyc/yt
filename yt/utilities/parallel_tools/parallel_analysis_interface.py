@@ -127,7 +127,7 @@ def enable_parallelism(suppress_logging=False, communicator=None):
         ("_parallel" in dir(sys) and sys._parallel is True):
         ytcfg["yt","inline"] = "True"
     if communicator.rank > 0:
-        if ytcfg.getboolean("yt","LogFile"):
+        if ytcfg["yt","LogFile"]:
             ytcfg["yt","LogFile"] = "False"
             yt.utilities.logger.disable_file_logging()
     yt.utilities.logger.uncolorize_logging()
@@ -138,12 +138,12 @@ def enable_parallelism(suppress_logging=False, communicator=None):
     if len(yt.utilities.logger.ytLogger.handlers) > 0:
         yt.utilities.logger.ytLogger.handlers[0].setFormatter(f)
 
-    if ytcfg.getboolean("yt", "parallel_traceback"):
+    if ytcfg["yt", "parallel_traceback"]:
         sys.excepthook = traceback_writer_hook("_%03i" % communicator.rank)
     else:
         sys.excepthook = default_mpi_excepthook
 
-    if ytcfg.getint("yt","LogLevel") < 20:
+    if ytcfg["yt","LogLevel"] < 20:
         yt.utilities.logger.ytLogger.warning(
           "Log Level is set low -- this could affect parallel performance!")
     dtype_names.update(dict(
@@ -186,7 +186,7 @@ class ObjectIterator(object):
         if hasattr(gs[0], 'proc_num'):
             # This one sort of knows about MPI, but not quite
             self._objs = [g for g in gs if g.proc_num ==
-                          ytcfg.getint('yt','__topcomm_parallel_rank')]
+                          ytcfg['yt','__topcomm_parallel_rank']]
             self._use_all = True
         else:
             self._objs = gs
@@ -654,7 +654,7 @@ class CommunicationSystem(object):
         from yt.config import ytcfg
         ytcfg["yt","__topcomm_parallel_size"] = str(new_comm.size)
         ytcfg["yt","__topcomm_parallel_rank"] = str(new_comm.rank)
-        if new_comm.rank > 0 and ytcfg.getboolean("yt","serialize"):
+        if new_comm.rank > 0 and ytcfg["yt","serialize"]:
             ytcfg["yt","onlydeserialize"] = "True"
 
     def pop(self):
@@ -1172,7 +1172,7 @@ class ParallelAnalysisInterface(object):
         if not self._distributed and subvol:
             return True, LE, RE, \
             self.ds.region(self.center, LE-padding, RE+padding)
-        elif ytcfg.getboolean("yt", "inline"):
+        elif ytcfg["yt", "inline"]:
             # At this point, we want to identify the root grid tile to which
             # this processor is assigned.
             # The only way I really know how to do this is to get the level-0

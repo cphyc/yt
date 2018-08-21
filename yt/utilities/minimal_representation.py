@@ -185,8 +185,8 @@ class MinimalRepresentation(object):
         pass
 
     def upload(self):
-        api_key = ytcfg.get("yt", "hub_api_key")
-        url = ytcfg.get("yt", "hub_url")
+        api_key = ytcfg["yt", "hub_api_key"]
+        url = ytcfg["yt", "hub_url"]
         if api_key == '':
             raise YTHubRegisterError
         metadata, (final_name, chunks) = self._generate_post()

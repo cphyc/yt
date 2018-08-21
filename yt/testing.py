@@ -702,7 +702,7 @@ def requires_module(module):
         return ftrue
 
 def requires_file(req_file):
-    path = ytcfg.get("yt", "test_data_dir")
+    path = ytcfg["yt", "test_data_dir"]
     def ffalse(func):
         return lambda: None
     def ftrue(func):
@@ -719,7 +719,7 @@ def disable_dataset_cache(func):
     @functools.wraps(func)
     def newfunc(*args, **kwargs):
         restore_cfg_state = False
-        if ytcfg.get("yt", "skip_dataset_cache") == "False":
+        if ytcfg["yt", "skip_dataset_cache"] == "False":
             ytcfg["yt","skip_dataset_cache"] = "True"
         rv = func(*args, **kwargs)
         if restore_cfg_state:

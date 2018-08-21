@@ -117,7 +117,7 @@ class IDVCamera(object):
         self.aspect_ratio = aspect_ratio
         
         # set cmap
-        cmap = cm.get_cmap(ytcfg.get("yt", "default_colormap"))
+        cmap = cm.get_cmap(ytcfg["yt", "default_colormap"])
         self.cmap = np.array(cmap(np.linspace(0, 1, 256)), dtype=np.float32)
         self.cmap_min = 1e55
         self.cmap_max = -1e55

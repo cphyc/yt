@@ -64,7 +64,7 @@ class ObjectFindingMixin(object) :
             # This prevents bad values for the case that the number of grids to
             # search is smaller than the number of processors being applied to
             # the task, by 
-            nproc = ytcfg.getint("yt", "__topcomm_parallel_size")
+            nproc = ytcfg["yt", "__topcomm_parallel_size"]
             while 1:
                 gi = (self.grid_levels >= self.max_level - finest_levels).ravel()
                 if gi.sum() >= nproc:

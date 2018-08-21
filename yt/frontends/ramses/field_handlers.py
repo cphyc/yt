@@ -306,7 +306,7 @@ class HydroFieldFileHandler(FieldFileHandler):
             ok = len(fields) > 0
         elif cls.config_field and ytcfg.has_section(cls.config_field):
             # Or this is given by the config
-            cfg = ytcfg.get(cls.config_field, 'fields')
+            cfg = ytcfg[cls.config_field, 'fields']
             known_fields = []
             for field in (_.strip() for _ in cfg.split('\n') if _.strip() != ''):
                 known_fields.append(field.strip())

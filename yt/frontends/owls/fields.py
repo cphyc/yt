@@ -302,7 +302,7 @@ class OWLSFieldInfo(SPHFieldInfo):
 
         # get test_data_dir from yt config (ytcgf)
         #----------------------------------------------
-        tdir = ytcfg.get("yt","test_data_dir")
+        tdir = ytcfg["yt","test_data_dir"]
 
         # set download destination to tdir or ./ if tdir isnt defined
         #----------------------------------------------
