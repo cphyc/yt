@@ -246,8 +246,7 @@ def test_ramses_part_count():
 
 @requires_file(ramsesCosmo)
 def test_custom_particle_def():
-    ytcfg.add_section('ramses-particles')
-    ytcfg['ramses-particles', 'fields'] = '''particle_position_x, d
+    ytcfg['ramses-particles'] = {'fields': '''particle_position_x, d
          particle_position_y, d
          particle_position_z, d
          particle_velocity_x, d
@@ -258,7 +257,7 @@ def test_custom_particle_def():
          particle_refinement_level, I
          particle_birth_time, d
          particle_foobar, d
-    '''
+    '''}
     ds = yt.load(ramsesCosmo)
 
     def check_unit(array, unit):
@@ -271,19 +270,18 @@ def test_custom_particle_def():
         check_unit(ds.r['io', 'particle_birth_time'], 's')
         check_unit(ds.r['io', 'particle_foobar'], 'dimensionless')
     finally:
-        ytcfg.remove_section('ramses-particles')
+        del ytcfg['ramses-particles']
 
 @requires_file(ramsesCosmo)
 def test_custom_hydro_def():
-    ytcfg.add_section('ramses-hydro')
-    ytcfg['ramses-hydro', 'fields'] = '''
+    ytcfg['ramses-hydro'] = {'fields': '''
     Density
     x-velocity
     y-velocity
     z-velocity
     Foo
     Bar
-    '''
+    '''}
     ds = yt.load(ramsesCosmo)
 
     def check_unit(array, unit):
@@ -296,7 +294,7 @@ def test_custom_hydro_def():
         check_unit(ds.r['ramses', 'Foo'], 'dimensionless')
         check_unit(ds.r['ramses', 'Bar'], 'dimensionless')
     finally:
-        ytcfg.remove_section('ramses-hydro')
+        del ytcfg['ramses-hydro']
 
 @requires_file(output_00080)
 def test_grav_detection():

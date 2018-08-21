@@ -99,7 +99,7 @@ class ParticleFileHandler(object):
                 self.file_descriptor)
 
         # Attempt to read the list of fields from the config file
-        if self.config_field and ytcfg.has_section(self.config_field):
+        if self.config_field and self.config_field in ytcfg:
             cfg = ytcfg[self.config_field, 'fields']
             known_fields = []
             for c in (_.strip() for _ in cfg.split('\n') if _.strip() != ''):
