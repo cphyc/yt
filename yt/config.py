@@ -45,7 +45,7 @@ ytcfg_defaults = dict(
     __topcomm_parallel_rank = 0,
     __topcomm_parallel_size = 1,
     __command_line = False,
-    storeparameterfiles = False,
+    StoreParameterFiles = False,
     parameterfilestore = 'parameter_files.csv',
     maximumstoreddatasets = 500,
     skip_dataset_cache = True,
@@ -226,19 +226,91 @@ class YTConfig(dict):
             return super(YTConfig, self).__getitem__(keys)
         else:
             node = super(YTConfig, self).__getitem__(keys[0])
-            for i in range(len(keys)-1):
-                node = node[keys[i+1]]
+            for i in range(1, len(keys)):
+                node = node[keys[i]]
 
             return node
+
+    def __setitem__(self, keys, val):
+        if len(keys) == 1:
+            keys = keys[0]
+        if type(keys) == str:
+            return super(YTConfig, self).__setitem__(keys, val)
+        else:
+            node = self.__getitem__(keys[:-1])
+            node[keys[-1]] = val
+
+    def get(self, key, default=None):
+        try:
+            ret = self[key]
+        except KeyError:
+            ret = default
+
+        if type(ret) == str:
+            return os.path.expanduser(os.path.expandvars(ret))
+        else:
+            return ret
+            
 
     def update(self, other):
         deep_update(self, other)
 
+    def read(self, files):
+        if type(files) == str:
+            files = [files]
+        for fname in files:
+            if os.path.exists(fname):
+                with open(fname, 'r') as f:
+                    self.update(toml.load(f))
+
+    def write(self, fd):
+        toml.dump(self, fd)
+
+    def get_field_config(self, keys, serializer, default=None):
+        '''Iterate over all the configured fields.
+
+        Parameters
+        ----------
+        keys : str list
+           Get these items from the configuration.
+        serializer : callable
+           Use this function to determine the exact name of the
+           fields. This function should raise a `YTFieldNotFound` if
+           the field does not exist in the dataset.
+        default : str, optional
+           If provided, use this value as a fallback.
+
+        Returns
+        -------
+        The function returns an iterator where each entry is given
+        (ftype, fname, cfg).
+
+        ftype, fname : str
+           The type and name of the configured field as given in the
+           configuration.
+        cfg : str
+           The value of the configured item.
+        '''
+
+        default = default if default else defaultdict(lambda: '')
+        if 'config' not in self:
+            return
+
+        for ftype in self['config']:
+            for fname in self['config', ftype]:
+                try:
+                    ftype, fname = serializer((ftype, fname))[0]
+                    for key in keys:
+                        value = self.get(['config', ftype, fname, key], default='')
+                        if value != '':
+                            yield (ftype, fname), key, value
+                except YTFieldNotFound:
+                    pass
+
+
+
 ytcfg = YTConfig({'yt': ytcfg_defaults})
-for fname in (_OLD_CONFIG_FILE, CURRENT_CONFIG_FILE, 'yt.cfg'):
-    if os.path.exists(fname):
-        with open(fname, 'r') as f:
-            ytcfg.update(toml.load(f))
+ytcfg.read((_OLD_CONFIG_FILE, CURRENT_CONFIG_FILE, 'yt.toml'))
 # Now we have parsed the config file.  Overrides come from the command line.
 
 # This should be implemented at some point.  The idea would be to have a set of

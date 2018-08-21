@@ -215,7 +215,6 @@ class PlotContainer(object):
         iterator = ytcfg.get_field_config(
             ('cmap', 'log'),
             default={'cmap': default_cmap, 'log': ''},
-            getter={'cmap': 'get', 'log': 'getboolean'},
             serializer=self.data_source._determine_fields)
 
         log_config = defaultdict(lambda: [None, None])
