@@ -33,7 +33,7 @@ ckms = clight.in_units("km/s").v
 
 def setup():
     from yt.config import ytcfg
-    ytcfg["yt", "__withintesting"] = "True"
+    ytcfg["yt", "__withintesting"] = True
 
 xray_data_dir = ytcfg["yt", "xray_data_dir"]
 

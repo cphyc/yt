@@ -21,7 +21,7 @@ from yt.utilities.answer_testing.framework import \
 def setup():
     """Test specific setup."""
     from yt.config import ytcfg
-    ytcfg["yt", "__withintesting"] = "True"
+    ytcfg["yt", "__withintesting"] = True
 
 def compare(ds, field, test_prefix, decimals=12):
     def slice_image(filename_prefix):

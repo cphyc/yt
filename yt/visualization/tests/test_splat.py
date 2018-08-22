@@ -26,7 +26,7 @@ from yt.utilities.lib.api import add_rgba_points_to_image
 def setup():
     """Test specific setup."""
     from yt.config import ytcfg
-    ytcfg["yt", "__withintesting"] = "True"
+    ytcfg["yt", "__withintesting"] = True
 
 
 def test_splat():

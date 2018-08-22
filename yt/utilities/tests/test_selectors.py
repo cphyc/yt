@@ -6,7 +6,7 @@ from yt.utilities.math_utils import periodic_dist
 
 def setup():
     from yt.config import ytcfg
-    ytcfg["yt", "__withintesting"] = "True"
+    ytcfg["yt", "__withintesting"] = True
 
 def test_point_selector():
     # generate fake amr data

@@ -6,7 +6,7 @@ from yt.utilities.answer_testing.framework import \
 from yt.config import ytcfg
 
 def setup():
-    ytcfg["yt", "__withintesting"] = "True"
+    ytcfg["yt", "__withintesting"] = True
 
 xray_data_dir = ytcfg["yt", "xray_data_dir"]
 

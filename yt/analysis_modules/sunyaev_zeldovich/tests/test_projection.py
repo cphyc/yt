@@ -42,7 +42,7 @@ freqs = np.array([30., 90., 240.])
 def setup():
     """Test specific setup."""
     from yt.config import ytcfg
-    ytcfg["yt", "__withintesting"] = "True"
+    ytcfg["yt", "__withintesting"] = True
 
 def full_szpack3d(ds, xo):
     data = ds.index.grids[0]

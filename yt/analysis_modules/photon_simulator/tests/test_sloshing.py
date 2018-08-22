@@ -28,7 +28,7 @@ import shutil
 
 def setup():
     from yt.config import ytcfg
-    ytcfg["yt", "__withintesting"] = "True"
+    ytcfg["yt", "__withintesting"] = True
 
 test_data_dir = ytcfg["yt", "test_data_dir"]
 xray_data_dir = ytcfg["yt", "xray_data_dir"]

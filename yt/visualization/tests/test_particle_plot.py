@@ -44,7 +44,7 @@ from yt.units.yt_array import YTArray
 def setup():
     """Test specific setup."""
     from yt.config import ytcfg
-    ytcfg["yt", "__withintesting"] = "True"
+    ytcfg["yt", "__withintesting"] = True
 
 #  override some of the plotwindow ATTR_ARGS
 PROJ_ATTR_ARGS = ATTR_ARGS.copy() 

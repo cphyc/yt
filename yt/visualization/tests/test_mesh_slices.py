@@ -24,7 +24,7 @@ from yt.utilities.lib.mesh_triangulation import triangulate_indices
 def setup():
     """Test specific setup."""
     from yt.config import ytcfg
-    ytcfg["yt", "__withintesting"] = "True"
+    ytcfg["yt", "__withintesting"] = True
 
 def compare(ds, field, idir, test_prefix, test_name, decimals=12, annotate=False):
     def slice_image(filename_prefix):
