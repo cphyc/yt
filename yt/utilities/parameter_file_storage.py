@@ -182,7 +182,7 @@ class ParameterFileStore(object):
         fn = self._get_db_name()
         f = open("%s.tmp" % fn, 'wb')
         w = csv.DictWriter(f, _field_names)
-        maxn = ytcfg["yt","maximumstoreddatasets"] # number written
+        maxn = ytcfg["yt", "maximumstoreddatasets"] # number written
         for h,v in islice(sorted(self._records.items(),
                           key=lambda a: -a[1]['last_seen']), 0, maxn):
             v['hash'] = h

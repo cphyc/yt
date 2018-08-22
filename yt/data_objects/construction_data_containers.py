@@ -2038,7 +2038,7 @@ class YTSurface(YTSelectionContainer3D):
         """
         if color_map is None:
             color_map = ytcfg["yt", "default_colormap"]
-        api_key = api_key or ytcfg["yt","sketchfab_api_key"]
+        api_key = api_key or ytcfg["yt", "sketchfab_api_key"]
         if api_key in (None, "None"):
             raise YTNoAPIKey("SketchFab.com", "sketchfab_api_key")
 

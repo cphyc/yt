@@ -28,7 +28,7 @@ import pprint
 import textwrap
 
 from yt.config import ytcfg, CURRENT_CONFIG_FILE
-ytcfg["yt","__command_line"] = "True"
+ytcfg["yt", "__command_line"] = True
 from yt.startup_tasks import parser, subparsers
 from yt.funcs import \
     ensure_dir, \
@@ -55,7 +55,7 @@ from yt.utilities.exceptions import \
 
 # loading field plugins for backward compatibility, since this module
 # used to do "from yt.mods import *"
-if ytcfg["yt","loadfieldplugins"]:
+if ytcfg["yt", "loadfieldplugins"]:
     enable_plugins()
 
 _default_colormap = ytcfg["yt", "default_colormap"]

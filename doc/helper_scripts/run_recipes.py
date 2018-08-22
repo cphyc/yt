@@ -17,7 +17,7 @@ DPATTERNS = ['LC*', 'LR', 'DD0046']
 BADF = ['cloudy_emissivity.h5', 'apec_emissivity.h5',
         'xray_emissivity.h5', 'AMRGridData_Slice_x_density.png']
 CWD = os.getcwd()
-ytcfg["yt", "serialize"] = "False"
+ytcfg["yt", "serialize"] = False
 PARALLEL_TEST = {"rockstar_nest": "3"}
 BLACKLIST = ["opengl_ipython", "opengl_vr"]
 

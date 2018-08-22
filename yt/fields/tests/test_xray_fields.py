@@ -6,7 +6,7 @@ from yt.utilities.answer_testing.framework import \
 
 def setup():
     from yt.config import ytcfg
-    ytcfg["yt","__withintesting"] = "True"
+    ytcfg["yt", "__withintesting"] = True
 
 def check_xray_fields(ds_fn, fields):
     if not can_run_ds(ds_fn): return

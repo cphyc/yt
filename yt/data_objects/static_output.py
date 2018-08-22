@@ -259,7 +259,7 @@ class Dataset(object):
             return obj
         apath = os.path.abspath(filename)
         cache_key = (apath, cPickle.dumps(args), cPickle.dumps(kwargs))
-        if ytcfg["yt","skip_dataset_cache"]:
+        if ytcfg["yt", "skip_dataset_cache"]:
             obj = object.__new__(cls)
         elif cache_key not in _cached_datasets:
             obj = object.__new__(cls)

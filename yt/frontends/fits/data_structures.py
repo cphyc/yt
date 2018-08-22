@@ -378,7 +378,7 @@ class FITSDataset(Dataset):
                     if os.path.exists(fits_file):
                         fn = fits_file
                     else:
-                        fn = os.path.join(ytcfg["yt","test_data_dir"],fits_file)
+                        fn = os.path.join(ytcfg["yt", "test_data_dir"],fits_file)
                     f = _astropy.pyfits.open(fn, memmap=True,
                                              do_not_scale_image_data=True,
                                              ignore_blank=True)

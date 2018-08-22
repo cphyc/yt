@@ -7,7 +7,7 @@ from yt.testing import fake_random_ds, assert_equal, periodicity_cases
 
 def setup():
     from yt.config import ytcfg
-    ytcfg["yt","__withintesting"] = "True"
+    ytcfg["yt", "__withintesting"] = True
 
 _fields_to_compare = ("spherical_r", "cylindrical_r",
                       "spherical_theta", "cylindrical_theta",

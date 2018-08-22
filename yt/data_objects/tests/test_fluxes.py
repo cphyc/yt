@@ -10,7 +10,7 @@ from yt.testing import fake_random_ds, assert_almost_equal, assert_equal
 
 def setup():
     from yt.config import ytcfg
-    ytcfg["yt","__withintesting"] = "True"
+    ytcfg["yt", "__withintesting"] = True
 
 def test_flux_calculation():
     ds = fake_random_ds(64, nprocs=4)

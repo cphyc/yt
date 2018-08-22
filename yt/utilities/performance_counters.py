@@ -117,7 +117,7 @@ class ProfilingController(object):
         return wrapper
 
     def write_out(self, filename_prefix):
-        if ytcfg["yt","__parallel"]:
+        if ytcfg["yt", "__parallel"]:
             pfn = "%s_%03i_%03i" % (filename_prefix,
                      ytcfg["yt", "__global_parallel_rank"],
                     ytcfg["yt", "__global_parallel_size"])

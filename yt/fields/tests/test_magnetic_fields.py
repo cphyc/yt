@@ -5,7 +5,7 @@ from yt.frontends.stream.api import load_uniform_grid
 
 def setup():
     from yt.config import ytcfg
-    ytcfg["yt","__withintesting"] = "True"
+    ytcfg["yt", "__withintesting"] = True
 
 def test_magnetic_fields():
 

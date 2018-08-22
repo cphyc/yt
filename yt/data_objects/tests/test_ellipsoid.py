@@ -6,8 +6,8 @@ from yt.testing import \
 
 def setup():
     from yt.config import ytcfg
-    ytcfg["yt","loglevel"] = "50"
-    ytcfg["yt","__withintesting"] = "True"
+    ytcfg["yt", "loglevel"] = 50
+    ytcfg["yt", "__withintesting"] = True
 
 def _difference(x1, x2, dw):
     rel = x1 - x2

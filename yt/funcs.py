@@ -185,7 +185,7 @@ def time_execution(func):
         mylog.debug('%s took %0.3f s', func.__name__, (t2-t1))
         return res
     from yt.config import ytcfg
-    if ytcfg["yt","timefunctions"] is True:
+    if ytcfg["yt", "timefunctions"] is True:
         return wrapper
     else:
         return func
@@ -226,7 +226,7 @@ def rootonly(func):
     from yt.config import ytcfg
     @wraps(func)
     def check_parallel_rank(*args, **kwargs):
-        if ytcfg["yt","__topcomm_parallel_rank"] > 0:
+        if ytcfg["yt", "__topcomm_parallel_rank"] > 0:
             return
         return func(*args, **kwargs)
     return check_parallel_rank
@@ -417,7 +417,7 @@ def only_on_root(func, *args, **kwargs):
         cfg_option = "__global_parallel_rank"
     else:
         cfg_option = "__topcomm_parallel_rank"
-    if not ytcfg["yt","__parallel"]:
+    if not ytcfg["yt", "__parallel"]:
         return func(*args,**kwargs)
     if ytcfg["yt", cfg_option] > 0: return
     return func(*args, **kwargs)
@@ -429,7 +429,7 @@ def is_root():
     """
     from yt.config import ytcfg
     cfg_option = "__topcomm_parallel_rank"
-    if not ytcfg["yt","__parallel"]:
+    if not ytcfg["yt", "__parallel"]:
         return True
     if ytcfg["yt", cfg_option] > 0:
         return False
@@ -809,7 +809,7 @@ def parallel_profile(prefix):
 
 def get_num_threads():
     from .config import ytcfg
-    nt = ytcfg["yt","numthreads"]
+    nt = ytcfg["yt", "numthreads"]
     if nt < 0:
         return os.environ.get("OMP_NUM_THREADS", 0)
     return nt

@@ -6,7 +6,7 @@ from yt.testing import fake_random_ds, assert_equal, assert_almost_equal, \
 
 def setup():
     from yt.config import ytcfg
-    ytcfg["yt","__withintesting"] = "True"
+    ytcfg["yt", "__withintesting"] = True
 
 def test_covering_grid():
     # We decompose in different ways

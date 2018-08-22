@@ -63,7 +63,7 @@ class Index(ParallelAnalysisInterface):
         self.num_grids = None
 
     def _initialize_data_storage(self):
-        if not ytcfg['yt','serialize']: return
+        if not ytcfg['yt', 'serialize']: return
         fn = self.ds.storage_filename
         if fn is None:
             if os.path.isfile(os.path.join(self.directory,
@@ -85,7 +85,7 @@ class Index(ParallelAnalysisInterface):
             writeable = os.access(dir_to_check, os.W_OK)
         else:
             writeable = os.access(fn, os.W_OK)
-        writeable = writeable and not ytcfg['yt','onlydeserialize']
+        writeable = writeable and not ytcfg['yt', 'onlydeserialize']
         # We now have our conditional stuff
         self.comm.barrier()
         if not writeable and not exists: return

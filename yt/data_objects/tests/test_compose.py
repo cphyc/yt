@@ -10,7 +10,7 @@ from yt.units.yt_array import \
 
 def setup():
     from yt.config import ytcfg
-    ytcfg["yt","__withintesting"] = "True"
+    ytcfg["yt", "__withintesting"] = True
 
 # Copied from test_boolean for computing a unique identifier for
 # each cell from cell positions

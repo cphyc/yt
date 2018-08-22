@@ -86,7 +86,7 @@ class SetConfigOption(argparse.Action):
     def __call__(self, parser, namespace, values, option_string = None):
         param, val = values.split("=")
         mylog.debug("Overriding config: %s = %s", param, val)
-        ytcfg["yt",param] = val
+        ytcfg["yt", param] = val
         if param == "loglevel": # special case
             mylog.setLevel(int(val))
 
@@ -120,7 +120,7 @@ if not hasattr(sys, 'argv') or sys.argv is None: sys.argv = []
 unparsed_args = []
 
 parallel_capable = False
-if not ytcfg["yt","__command_line"]:
+if not ytcfg["yt", "__command_line"]:
     opts, unparsed_args = parser.parse_known_args()
     # THIS IS NOT SUCH A GOOD IDEA:
     #sys.argv = [a for a in unparsed_args]

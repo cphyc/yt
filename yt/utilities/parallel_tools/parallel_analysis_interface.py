@@ -120,15 +120,15 @@ def enable_parallelism(suppress_logging=False, communicator=None):
     mylog.info("Global parallel computation enabled: %s / %s",
                communicator.rank, communicator.size)
     communication_system.push(communicator)
-    ytcfg["yt","__global_parallel_rank"] = str(communicator.rank)
-    ytcfg["yt","__global_parallel_size"] = str(communicator.size)
-    ytcfg["yt","__parallel"] = "True"
+    ytcfg["yt", "__global_parallel_rank"] = str(communicator.rank)
+    ytcfg["yt", "__global_parallel_size"] = str(communicator.size)
+    ytcfg["yt", "__parallel"] = True
     if exe_name == "embed_enzo" or \
         ("_parallel" in dir(sys) and sys._parallel is True):
-        ytcfg["yt","inline"] = "True"
+        ytcfg["yt", "inline"] = True
     if communicator.rank > 0:
-        if ytcfg["yt","logfile"]:
-            ytcfg["yt","logfile"] = "False"
+        if ytcfg["yt", "logfile"]:
+            ytcfg["yt", "logfile"] = False
             yt.utilities.logger.disable_file_logging()
     yt.utilities.logger.uncolorize_logging()
     # Even though the uncolorize function already resets the format string,
@@ -186,7 +186,7 @@ class ObjectIterator(object):
         if hasattr(gs[0], 'proc_num'):
             # This one sort of knows about MPI, but not quite
             self._objs = [g for g in gs if g.proc_num ==
-                          ytcfg['yt','__topcomm_parallel_rank']]
+                          ytcfg['yt', '__topcomm_parallel_rank']]
             self._use_all = True
         else:
             self._objs = gs
@@ -652,10 +652,10 @@ class CommunicationSystem(object):
 
     def _update_parallel_state(self, new_comm):
         from yt.config import ytcfg
-        ytcfg["yt","__topcomm_parallel_size"] = str(new_comm.size)
-        ytcfg["yt","__topcomm_parallel_rank"] = str(new_comm.rank)
-        if new_comm.rank > 0 and ytcfg["yt","serialize"]:
-            ytcfg["yt","onlydeserialize"] = "True"
+        ytcfg["yt", "__topcomm_parallel_size"] = str(new_comm.size)
+        ytcfg["yt", "__topcomm_parallel_rank"] = str(new_comm.rank)
+        if new_comm.rank > 0 and ytcfg["yt", "serialize"]:
+            ytcfg["yt", "onlydeserialize"] = True
 
     def pop(self):
         self.communicators.pop()
