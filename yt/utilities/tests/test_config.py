@@ -230,9 +230,6 @@ class TestYTConfigMigrationFromIniToToml(TestYTConfig):
                           potential_plugin_file)
 
     def testConfigMigration(self):
-        old_config_dir = os.path.dirname(_OLD_CONFIG_FILE)
-        new_config_dir = os.path.dirname(CURRENT_CONFIG_FILE)
-
         self.assertFalse(os.path.exists(CURRENT_CONFIG_FILE))
         self.assertTrue(os.path.exists(_OLD_CONFIG_FILE))
 
