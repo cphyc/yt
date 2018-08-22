@@ -153,13 +153,17 @@ def deep_update(d, u):
 class YTConfig(dict):
     def __getitem__(self, keys):
         if type(keys) == str:
-            return super(YTConfig, self).__getitem__(keys)
+            val = super(YTConfig, self).__getitem__(keys)
         else:
             node = super(YTConfig, self).__getitem__(keys[0])
             for i in range(1, len(keys)):
                 node = node[keys[i]]
 
-            return node
+            val = node
+        if type(val) == str:
+            return os.path.expanduser(os.path.expandvars(val))
+        else:
+            return val
 
     def __setitem__(self, keys, val):
         if len(keys) == 1:
@@ -175,11 +179,7 @@ class YTConfig(dict):
             ret = self[key]
         except KeyError:
             ret = default
-
-        if type(ret) == str:
-            return os.path.expanduser(os.path.expandvars(ret))
-        else:
-            return ret
+        return ret
 
     def set(self, *args):
         *keys, value = args
@@ -196,9 +196,17 @@ class YTConfig(dict):
                 with open(fname, 'r') as f:
                     self.update(toml.load(f))
 
-    def write(self, fname):
-        with open(fname, 'w') as fd:
+    def write(self, fd):
+        do_close = False
+        if not hasattr(fd, 'write'):
+            fd = open(fd, 'w')
+            do_close = True
+        try:
             toml.dump(self, fd)
+        finally:
+            if do_close:
+                fd.close()
+        
 
     def get_field_config(self, keys, serializer, default=None):
         '''Iterate over all the configured fields.
@@ -244,7 +252,7 @@ class YTConfig(dict):
 
 
 ytcfg = YTConfig({'yt': ytcfg_defaults})
-ytcfg.read((_OLD_CONFIG_FILE, CURRENT_CONFIG_FILE, 'yt.toml'))
+ytcfg.read((CURRENT_CONFIG_FILE, 'yt.toml'))
 # Now we have parsed the config file.  Overrides come from the command line.
 
 # This should be implemented at some point.  The idea would be to have a set of

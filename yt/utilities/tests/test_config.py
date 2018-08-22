@@ -21,13 +21,15 @@ import unittest
 import yt.utilities.command_line
 import yt.config
 from yt.config import \
-    CURRENT_CONFIG_FILE, _OLD_CONFIG_FILE, CONFIG_DIR, YTConfig
+    CURRENT_CONFIG_FILE, _OLD_CONFIG_FILE, _OLD_INI_CONFIG_FILE, CONFIG_DIR, YTConfig
 from yt.extern.six import StringIO
-from yt.extern.six.moves.configparser import NoOptionError
 from yt.fields.tests.test_fields_plugins import TEST_PLUGIN_FILE
 
+import pytoml as toml
+
 _TEST_PLUGIN = '_test_plugin.py'
-_DUMMY_CFG = ['[yt]', 'loglevel = 49', 'pluginfilename = ' + _TEST_PLUGIN]
+_DUMMY_CFG = ['[yt]', 'loglevel = 49', 'pluginfilename = ' + _TEST_PLUGIN, 'coloredlogs: False']
+_DUMMY_CFG_PARSED = {'yt': {'loglevel': 49, 'pluginfilename': _TEST_PLUGIN, 'coloredlogs': False}}
 
 
 @contextlib.contextmanager
@@ -59,7 +61,7 @@ def setUpModule():
 
 
 def tearDownModule():
-    for cfgfile in (CURRENT_CONFIG_FILE, _OLD_CONFIG_FILE): 
+    for cfgfile in (CURRENT_CONFIG_FILE, _OLD_CONFIG_FILE):
         if os.path.exists(cfgfile + '.bak_test'):
             os.rename(cfgfile + '.bak_test', cfgfile)
 
@@ -118,26 +120,26 @@ class TestYTConfigCommands(TestYTConfig):
         self._testKeyValue('test_data_dir', '$HOME/yt-data',
                            os.path.expandvars('$HOME/yt-data'))
 
-        with self.assertRaises(NoOptionError):
+        with self.assertRaises(KeyError):
             self._runYTConfig(['get', 'yt', 'foo'])
-    
+
     def tearDown(self):
         if os.path.exists(CURRENT_CONFIG_FILE):
             os.remove(CURRENT_CONFIG_FILE)
 
-class TestYTConfigMigration(TestYTConfig):
+class TestYTConfigMigrationFromOldToIni(TestYTConfig):
 
     def setUp(self):
         if not os.path.exists(os.path.dirname(_OLD_CONFIG_FILE)):
             os.makedirs(os.path.dirname(_OLD_CONFIG_FILE))
-        
+
         with open(_OLD_CONFIG_FILE, 'w') as fh:
             for line in _DUMMY_CFG:
                 fh.write('{}\n'.format(line))
-        
+
         if os.path.exists(CURRENT_CONFIG_FILE):
             os.remove(CURRENT_CONFIG_FILE)
-    
+
         my_plugin_name = _TEST_PLUGIN
         old_config_dir = os.path.join(os.path.expanduser('~'), '.yt')
         for base_prefix in ('', CONFIG_DIR, old_config_dir):
@@ -155,7 +157,7 @@ class TestYTConfigMigration(TestYTConfig):
             os.remove(CURRENT_CONFIG_FILE)
         if os.path.exists(_OLD_CONFIG_FILE + '.bak'):
             os.remove(_OLD_CONFIG_FILE + '.bak')
-        
+
         my_plugin_name = _TEST_PLUGIN
         plugin_file = os.path.join(CONFIG_DIR, my_plugin_name)
         if os.path.exists(plugin_file):
@@ -176,7 +178,7 @@ class TestYTConfigMigration(TestYTConfig):
         self.assertTrue(os.path.exists(_OLD_CONFIG_FILE))
         self.assertTrue(
             os.path.exists(os.path.join(old_config_dir, _TEST_PLUGIN)))
-        
+
         info = self._runYTConfig(['migrate'])
         self.assertEqual(info['rc'], 0)
 
@@ -190,5 +192,59 @@ class TestYTConfigMigration(TestYTConfig):
         )
 
         with open(CURRENT_CONFIG_FILE, 'r') as fh:
-            new_cfg = ''.join(fh.readlines())
-        self.assertEqual(new_cfg.strip().split('\n'), _DUMMY_CFG)
+            new_cp = toml.load(fh)
+
+        assert set(new_cp['yt'].keys()) == set(_DUMMY_CFG_PARSED['yt'].keys())
+        for key, val in new_cp['yt'].items():
+            self.assertEqual(new_cp['yt'][key], _DUMMY_CFG_PARSED['yt'][key])
+
+class TestYTConfigMigrationFromIniToToml(TestYTConfig):
+
+    def setUp(self):
+        if not os.path.exists(os.path.dirname(_OLD_INI_CONFIG_FILE)):
+            os.makedirs(os.path.dirname(_OLD_INI_CONFIG_FILE))
+
+        with open(_OLD_CONFIG_FILE, 'w') as fh:
+            for line in _DUMMY_CFG:
+                fh.write('{}\n'.format(line))
+
+        if os.path.exists(CURRENT_CONFIG_FILE):
+            os.remove(CURRENT_CONFIG_FILE)
+
+    def tearDown(self):
+        if os.path.exists(CURRENT_CONFIG_FILE):
+            os.remove(CURRENT_CONFIG_FILE)
+        if os.path.exists(_OLD_CONFIG_FILE + '.bak'):
+            os.remove(_OLD_CONFIG_FILE + '.bak')
+
+        my_plugin_name = _TEST_PLUGIN
+        plugin_file = os.path.join(CONFIG_DIR, my_plugin_name)
+        if os.path.exists(plugin_file):
+            os.remove(plugin_file)
+
+        old_config_dir = os.path.join(os.path.expanduser('~'), '.yt')
+        for base_prefix in ('', CONFIG_DIR, old_config_dir):
+            potential_plugin_file = os.path.join(base_prefix, my_plugin_name)
+            if os.path.isfile(potential_plugin_file + '.bak_test'):
+                os.rename(potential_plugin_file + '.bak_test',
+                          potential_plugin_file)
+
+    def testConfigMigration(self):
+        old_config_dir = os.path.dirname(_OLD_CONFIG_FILE)
+        new_config_dir = os.path.dirname(CURRENT_CONFIG_FILE)
+
+        self.assertFalse(os.path.exists(CURRENT_CONFIG_FILE))
+        self.assertTrue(os.path.exists(_OLD_CONFIG_FILE))
+
+        info = self._runYTConfig(['migrate'])
+        self.assertEqual(info['rc'], 0)
+
+        self.assertTrue(os.path.exists(CURRENT_CONFIG_FILE))
+        self.assertFalse(os.path.exists(_OLD_CONFIG_FILE))
+        self.assertTrue(os.path.exists(_OLD_CONFIG_FILE + '.bak'))
+        with open(CURRENT_CONFIG_FILE, 'r') as fh:
+            new_cp = toml.load(fh)
+
+        assert set(new_cp['yt'].keys()) == set(_DUMMY_CFG_PARSED['yt'].keys())
+        for key, val in new_cp['yt'].items():
+            self.assertEqual(new_cp['yt'][key], _DUMMY_CFG_PARSED['yt'][key])

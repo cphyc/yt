@@ -12,18 +12,14 @@ import shutil
 import sys
 import argparse
 from yt.config import CURRENT_CONFIG_FILE, _OLD_CONFIG_FILE, _OLD_INI_CONFIG_FILE, YTConfig
+from yt.extern.six.moves import configparser
 
 CONFIG = YTConfig()
 CONFIG.read(CURRENT_CONFIG_FILE)
 
 
 def get_config(section, option):
-    try:
-        return CONFIG[section, option]
-    except KeyError:
-        print('Option "%s %s" does not exist in the configuration' % (section, option))
-        sys.exit(1)
-
+    return CONFIG[section, option]
 
 def _cast_helper(v):
     types = (int, float, bool_caster)
@@ -62,14 +58,19 @@ def migrate_config_to_ini():
     if not os.path.exists(_OLD_CONFIG_FILE):
         print('Old config not found.')
         return
-    CONFIG.read(_OLD_CONFIG_FILE)
+    cp = configparser.ConfigParser()
+    cp.read(_OLD_CONFIG_FILE)
+    for section in cp.sections():
+        for option in cp.options(section):
+            value = _cast_helper(cp.get(section, option))
+            CONFIG.set(section, option, value)
     print('Writing a new config file to: {}'.format(CURRENT_CONFIG_FILE))
     write_config()
     print('Backing up the old config file: {}.bak'.format(_OLD_CONFIG_FILE))
     os.rename(_OLD_CONFIG_FILE, _OLD_CONFIG_FILE + '.bak')
 
     old_config_dir = os.path.dirname(_OLD_CONFIG_FILE)
-    plugin_file = CONFIG.get('yt', 'pluginfilename')
+    plugin_file = CONFIG['yt', 'pluginfilename']
     if plugin_file and \
             os.path.exists(os.path.join(old_config_dir, plugin_file)):
         print('Migrating plugin file {} to new location'.format(plugin_file))
