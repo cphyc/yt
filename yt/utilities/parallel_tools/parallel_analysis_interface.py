@@ -127,8 +127,8 @@ def enable_parallelism(suppress_logging=False, communicator=None):
         ("_parallel" in dir(sys) and sys._parallel is True):
         ytcfg["yt","inline"] = "True"
     if communicator.rank > 0:
-        if ytcfg["yt","LogFile"]:
-            ytcfg["yt","LogFile"] = "False"
+        if ytcfg["yt","logfile"]:
+            ytcfg["yt","logfile"] = "False"
             yt.utilities.logger.disable_file_logging()
     yt.utilities.logger.uncolorize_logging()
     # Even though the uncolorize function already resets the format string,
@@ -143,7 +143,7 @@ def enable_parallelism(suppress_logging=False, communicator=None):
     else:
         sys.excepthook = default_mpi_excepthook
 
-    if ytcfg["yt","LogLevel"] < 20:
+    if ytcfg["yt", "loglevel"] < 20:
         yt.utilities.logger.ytLogger.warning(
           "Log Level is set low -- this could affect parallel performance!")
     dtype_names.update(dict(
