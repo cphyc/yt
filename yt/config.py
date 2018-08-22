@@ -84,12 +84,13 @@ ytcfg_defaults = dict(
 CONFIG_DIR = os.environ.get(
     'XDG_CONFIG_HOME', os.path.join(os.path.expanduser('~'), '.config', 'yt'))
 if not os.path.exists(CONFIG_DIR):
-    try: 
+    try:
         os.makedirs(CONFIG_DIR)
     except OSError:
         warnings.warn("unable to create yt config directory")
 
 CURRENT_CONFIG_FILE = os.path.join(CONFIG_DIR, 'yt.toml')
+_OLD_INI_CONFIG_FILE = os.path.join(CONFIG_DIR, 'ytrc')
 _OLD_CONFIG_FILE = os.path.join(os.path.expanduser('~'), '.yt', 'config')
 
 # Here is the upgrade.  We're actually going to parse the file in its entirety
@@ -107,16 +108,16 @@ if os.path.exists(_OLD_CONFIG_FILE):
         cp.read(_OLD_CONFIG_FILE)
         # NOTE: To avoid having the 'DEFAULT' section here,
         # we are not passing in ytcfg_defaults to the constructor.
-        new_cp = configparser.ConfigParser()
-        new_cp.add_section("yt")
+        new_cp = {'yt': {}}
         for section in cp.sections():
             for option in cp.options(section):
                 # We changed them all to lowercase
                 if option.lower() in ytcfg_defaults:
-                    new_cp.set("yt", option, cp.get(section, option))
+                    new_cp['yt'][option] = cp.get(section, option)
                     print("Setting %s to %s" % (option, cp.get(section, option)))
         open(_OLD_CONFIG_FILE + ".old", "w").write(f)
-        new_cp.write(open(_OLD_CONFIG_FILE, "w"))
+        with open(CURRENT_CONFIG_FILE, "w") as new_cfg:
+            toml.dump(new_cp, new_cfg)
 
     msg = (
         "The configuration file {} is deprecated. "
@@ -125,92 +126,21 @@ if os.path.exists(_OLD_CONFIG_FILE):
     )
     warnings.warn(msg.format(_OLD_CONFIG_FILE, CURRENT_CONFIG_FILE))
 
+if os.path.exists(_OLD_INI_CONFIG_FILE):
+    msg = (
+        "The configuration file {} is deprecated. "
+        "Please migrate your config to {} by running: "
+        "'yt config migrate'"
+    )
+    warnings.warn(msg.format(_OLD_INI_CONFIG_FILE, CURRENT_CONFIG_FILE))
+
 if not os.path.exists(CURRENT_CONFIG_FILE):
-    cp = configparser.ConfigParser()
     cp = {'yt': {}}
     try:
         with open(CURRENT_CONFIG_FILE, 'w') as new_cfg:
             toml.dump(cp, new_cfg)
     except IOError:
         warnings.warn("unable to write new config file")
-
-# class YTConfigParser(configparser.ConfigParser, object):
-#     def __setitem__(self, key, val):
-#         self.set(key[0], key[1], val)
-
-#     def __getitem__(self, key):
-#         return self.get(key[0], key[1])
-
-#     def get(self, section, option, *args, **kwargs):
-#         val = super(YTConfigParser, self).get(section, option, *args, **kwargs)
-#         if type(val) == str:
-#             return os.path.expanduser(os.path.expandvars(val))
-#         else:
-#             return val
-
-#     def get_field_config(self, keys, serializer, getter, default=None):
-#         '''Iterate over all the configured fields.
-
-#         Parameters
-#         ----------
-#         keys : str list
-#            Get these items from the configuration.
-#         serializer : callable
-#            Use this function to determine the exact name of the
-#            fields. This function should raise a `YTFieldNotFound` if
-#            the field does not exist in the dataset.
-#         getter : dict
-#            What getter to use for each key. Can be any of 'get',
-#            'getboolean', 'getfloat' or 'getint'. See note.
-#         default : str, optional
-#            If provided, use this value as a fallback.
-
-#         Returns
-#         -------
-#         The function returns an iterator where each entry is given
-#         (ftype, fname, cfg).
-
-#         ftype, fname : str
-#            The type and name of the configured field as given in the
-#            configuration.
-#         cfg : str
-#            The value of the configured item.
-
-#         Note
-#         ----
-#         The getter is the function used to access the configuration. It can any listed in
-#         `https://docs.python.org/3.6/library/configparser.html#configparser.ConfigParser.get`.
-
-#         For example `getfloat` will return float values and `getint` int values.
-#         '''
-
-#         # Check input values
-#         ok_values = ('get', 'getboolean', 'getfloat', 'getint')
-#         for key, val in getter.items():
-#             if val not in ok_values:
-#                 raise Exception("Expected one of %s, got `%s'" % (ok_values, val))
-
-#         default = default if default else defaultdict(lambda: '')
-#         for section in self.sections():
-#             # Match lines like
-#             match = SECTION_RE.match(section)
-#             if match:
-#                 data = match.groupdict()
-#                 ftype = data['ftype']
-#                 fname = data['fname']
-
-#                 try:
-#                     ftype, fname = serializer((ftype, fname))[0]
-#                     for key in keys:
-#                         _get = getattr(self, getter[key])
-#                         try:
-#                             value = _get(section, key)
-#                         except NoOptionError:
-#                             value = default[key]
-#                         if value != '':
-#                             yield (ftype, fname), key, value
-#                 except YTFieldNotFound:
-#                     pass
 
 def deep_update(d, u):
     for k, v in u.items():
@@ -250,7 +180,10 @@ class YTConfig(dict):
             return os.path.expanduser(os.path.expandvars(ret))
         else:
             return ret
-            
+
+    def set(self, *args):
+        *keys, value = args
+        self[keys] = value
 
     def update(self, other):
         deep_update(self, other)
@@ -263,8 +196,9 @@ class YTConfig(dict):
                 with open(fname, 'r') as f:
                     self.update(toml.load(f))
 
-    def write(self, fd):
-        toml.dump(self, fd)
+    def write(self, fname):
+        with open(fname, 'w') as fd:
+            toml.dump(self, fd)
 
     def get_field_config(self, keys, serializer, default=None):
         '''Iterate over all the configured fields.

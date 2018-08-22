@@ -21,7 +21,7 @@ import unittest
 import yt.utilities.command_line
 import yt.config
 from yt.config import \
-    CURRENT_CONFIG_FILE, _OLD_CONFIG_FILE, CONFIG_DIR, YTConfigParser
+    CURRENT_CONFIG_FILE, _OLD_CONFIG_FILE, CONFIG_DIR, YTConfig
 from yt.extern.six import StringIO
 from yt.extern.six.moves.configparser import NoOptionError
 from yt.fields.tests.test_fields_plugins import TEST_PLUGIN_FILE
@@ -53,7 +53,7 @@ def setUpModule():
             os.rename(cfgfile, cfgfile + '.bak_test')
 
             if cfgfile == CURRENT_CONFIG_FILE:
-                yt.utilities.configure.CONFIG = YTConfigParser()
+                yt.utilities.configure.CONFIG = YTConfig()
                 if 'yt' not in yt.utilities.configure.CONFIG:
                     yt.utilities.configure.CONFIG['yt'] = {}
 
