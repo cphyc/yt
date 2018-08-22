@@ -182,7 +182,8 @@ class YTConfig(dict):
         return ret
 
     def set(self, *args):
-        *keys, value = args
+        keys = args[:-1]
+        value = args[-1]
         self[keys] = value
 
     def update(self, other):

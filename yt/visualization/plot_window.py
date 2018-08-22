@@ -293,9 +293,9 @@ class PlotWindow(ImagePlotContainer):
                 field_unit = Unit(field_unit, registry=self.ds.unit_registry)
                 if field_unit is not None:
                     if self.data_source.weight_field is None:
+                        args = ['config'] + list(field) + ['path_length_unit']
                         # Try to get specific integration unit
-                        path_length_unit = ytcfg.get(
-                            ('config', *field, 'path_length_unit'))
+                        path_length_unit = ytcfg.get(args)
 
                         # Else get per-field-type integration unit
                         if path_length_unit is None:
