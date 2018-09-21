@@ -83,7 +83,7 @@ class ParticleTrajectories(object):
             old_level = int(ytcfg.get("yt","loglevel"))
             mylog.setLevel(40)
         ds_first = self.data_series[0]
-        dd_first = ds_first.all_data()
+        dd_first = outputs._select_data_function(ds_first)
 
         fds = {}
         for field in (
@@ -94,7 +94,7 @@ class ParticleTrajectories(object):
         my_storage = {}
         pbar = get_pbar("Constructing trajectory information", len(self.data_series))
         for i, (sto, ds) in enumerate(self.data_series.piter(storage=my_storage)):
-            dd = ds.all_data()
+            dd = outputs._select_data_function(ds)
             newtags = dd[fds["particle_index"]].d.astype("int64")
             mask = np.in1d(newtags, indices, assume_unique=True)
             sort = np.argsort(newtags[mask])
@@ -147,7 +147,7 @@ class ParticleTrajectories(object):
 
     def _get_full_field_name(self, field):
         ds_first = self.data_series[0]
-        dd_first = ds_first.all_data()
+        dd_first = self.data_series._select_data_function(ds_first)
         ptype = self.ptype if self.ptype else 'all'
         return dd_first._determine_fields((ptype, field))
 
@@ -226,7 +226,7 @@ class ParticleTrajectories(object):
             old_level = int(ytcfg.get("yt","loglevel"))
             mylog.setLevel(40)
         ds_first = self.data_series[0]
-        dd_first = ds_first.all_data()
+        dd_first = self.data_series._select_data_function(ds_first)
 
         fds = {}
         new_particle_fields = []
@@ -251,7 +251,7 @@ class ParticleTrajectories(object):
             pfield = {}
 
             if new_particle_fields:  # there's at least one particle field
-                dd = ds.all_data()
+                dd = self.data_series._select_data_function(ds)
                 for field in new_particle_fields:
                     # This is easy... just get the particle fields
                     pfield[field] = dd[fds[field]].d[mask][sort]

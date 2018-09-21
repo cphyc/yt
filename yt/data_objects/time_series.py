@@ -163,16 +163,23 @@ class DatasetSeries(object):
         return ret
 
     def __init__(self, outputs, parallel = True, setup_function = None,
-                 mixed_dataset_types = False, **kwargs):
+                 mixed_dataset_types = False, select_data_function = None,
+                 **kwargs):
         # This is needed to properly set _pre_outputs for Simulation subclasses.
         self._mixed_dataset_types = mixed_dataset_types
         if iterable(outputs) and not isinstance(outputs, string_types):
             self._pre_outputs = outputs[:]
         self.tasks = AnalysisTaskProxy(self)
         self.params = TimeSeriesParametersContainer(self)
+
         if setup_function is None:
             setup_function = lambda a: None
         self._setup_function = setup_function
+
+        if select_data_function is None:
+            select_data_function = lambda ds: ds.all_data()
+        self._select_data_function = select_data_function
+
         for type_name in data_object_registry:
             setattr(self, type_name, functools.partial(
                 DatasetSeriesObject, self, type_name))
