@@ -8,7 +8,7 @@ from yt.visualization.streamlines import Streamlines
 
 def setup():
     from yt.config import ytcfg
-    ytcfg["yt","__withintesting"] = "True"
+    ytcfg["yt","__withintesting"] = True
 
 _fields = ("density", "velocity_x", "velocity_y", "velocity_z")
 

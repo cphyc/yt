@@ -20,7 +20,7 @@ TEST_COMMENT = "Testing write_to_gdf"
 def setup():
     """Test specific setup."""
     from yt.config import ytcfg
-    ytcfg["yt", "__withintesting"] = "True"
+    ytcfg["yt", "__withintesting"] = True
 
 
 @requires_module('h5py')

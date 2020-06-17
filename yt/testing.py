@@ -745,10 +745,10 @@ def disable_dataset_cache(func):
     def newfunc(*args, **kwargs):
         restore_cfg_state = False
         if ytcfg.get("yt", "skip_dataset_cache") == "False":
-            ytcfg["yt","skip_dataset_cache"] = "True"
+            ytcfg["yt","skip_dataset_cache"] = True
         rv = func(*args, **kwargs)
         if restore_cfg_state:
-            ytcfg["yt","skip_dataset_cache"] = "False"
+            ytcfg["yt","skip_dataset_cache"] = False
         return rv
     return newfunc
 

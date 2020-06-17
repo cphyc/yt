@@ -15,7 +15,7 @@ from yt.data_objects.particle_filters import particle_filter
 
 
 def setup():
-    ytcfg["yt","__withintesting"] = "True"
+    ytcfg["yt","__withintesting"] = True
 
 data_path = ytcfg.get("yt", "test_data_dir")
 

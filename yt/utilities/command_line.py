@@ -11,7 +11,7 @@ import pprint
 import textwrap
 
 from yt.config import ytcfg, CURRENT_CONFIG_FILE
-ytcfg["yt","__command_line"] = "True"
+ytcfg["yt","__command_line"] = True
 from yt.startup_tasks import parser, subparsers
 from yt.funcs import \
     ensure_dir, \

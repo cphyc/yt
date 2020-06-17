@@ -4,7 +4,7 @@ import numpy as np
 
 def setup():
     from yt.config import ytcfg
-    ytcfg["yt", "__withintesting"] = "True"
+    ytcfg["yt", "__withintesting"] = True
 
 
 def test_mean_sum_integrate():

@@ -16,7 +16,7 @@ from yt import particle_filter
 
 def setup():
     from yt.config import ytcfg
-    ytcfg["yt","__withintesting"] = "True"
+    ytcfg["yt","__withintesting"] = True
 
 def test_extrema():
     for nprocs in [1, 2, 4, 8]:

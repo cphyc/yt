@@ -88,7 +88,7 @@ def _deep_update(d, u):
             d[k] = v
     return d
         
-class YTConfigParser(dict):
+class YTConfigParser:
     def __init__(self, defaults={}):
         self.config = {'yt': defaults}
 
@@ -109,27 +109,47 @@ class YTConfigParser(dict):
                 pass
         return ok_filenames
 
-    def get(self, *keys):
+    def get(self, *keys, default=None):
         head = self.config
 
         for k in keys:
-            head = head[k]
-        return head
+            head = head.get(k, default)
+            if head is None:  # couldn't find anything!
+                return default
+        else:
+            return head
 
     def getint(self, section, key, **kwa):
-        ret = self.get(section, key)
+        ret = self.get(section, key, **kwa)
         assert isinstance(ret, int)
         return ret
 
     def getboolean(self, section, key, **kwa):
-        ret = self.get(section, key)
+        ret = self.get(section, key, **kwa)
         assert isinstance(ret, bool)
         return ret
 
     def getfloat(self, section, key, **kwa):
-        ret = self.get(section, key)
+        ret = self.get(section, key, **kwa)
         assert isinstance(ret, float)
         return ret
+
+    def has_section(self, section):
+        return section in self.config
+
+    def add_section(self, section):
+        if not self.has_section(section):
+            self.config[section] = {}
+
+    def remove_section(self, section):
+        if self.has_section(section):
+            del self.config[section]
+
+    def set(self, section, key, value):
+        self.config[section][key] = value
+
+    def __setitem__(self, path, value):
+        self.set(path[0], path[1], value)
 
 
 ytcfg = YTConfigParser(ytcfg_defaults)

@@ -6,7 +6,7 @@ from yt.testing import \
 def setup():
     """Test specific setup."""
     from yt.config import ytcfg
-    ytcfg["yt", "__withintesting"] = "True"
+    ytcfg["yt", "__withintesting"] = True
 
 
 def test_export_frb():

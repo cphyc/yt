@@ -6,7 +6,7 @@ import tempfile
 
 def setup():
     from yt.config import ytcfg
-    ytcfg["yt", "__withintesting"] = "True"
+    ytcfg["yt", "__withintesting"] = True
 
 
 def teardown_func(fns):

@@ -64,9 +64,9 @@ particle_families = {
     'gas_tracer': 0
 }
 
-if 'ramses-families' in ytcfg:
-    for key in particle_families.keys():
-        val = ytcfg.getint('ramses-families', key, fallback=None)
+if ytcfg.has_section('ramses-families'):
+    for key, default_val in particle_families.items():
+        val = ytcfg.getint('ramses-families', key, default=None)
         if val is not None:
-            mylog.info('Changing family %s from %s to %s' % (key, particle_families[key], val))
+            mylog.info('Changing family %s from %s to %s' % (key, default_val, val))
             particle_families[key] = val

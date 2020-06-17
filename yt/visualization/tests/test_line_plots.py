@@ -9,7 +9,7 @@ from yt.visualization.line_plot import _validate_point
 def setup():
     """Test specific setup."""
     from yt.config import ytcfg
-    ytcfg["yt", "__withintesting"] = "True"
+    ytcfg["yt", "__withintesting"] = True
 
 def compare(ds, plot, test_prefix, test_name, decimals=12):
     def image_from_plot(filename_prefix):

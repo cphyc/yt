@@ -12,7 +12,7 @@ from yt.visualization.geo_plot_utils import transform_list, get_mpl_transform
 def setup():
     """Test specific setup."""
     from yt.config import ytcfg
-    ytcfg["yt", "__withintesting"] = "True"
+    ytcfg["yt", "__withintesting"] = True
 
 def compare(ds, field, idir, test_prefix, test_name, projection,
             decimals=12, annotate=False):

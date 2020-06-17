@@ -17,7 +17,7 @@ from unittest import TestCase
 def setup():
     """Test specific setup."""
     from yt.config import ytcfg
-    ytcfg["yt", "__withintesting"] = "True"
+    ytcfg["yt", "__withintesting"] = True
 
 
 class CameraTest(TestCase):

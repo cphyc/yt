@@ -22,7 +22,7 @@ base_ds.cosmological_simulation = 1
 base_ds.cosmology = Cosmology()
 
 from yt.config import ytcfg
-ytcfg["yt","__withintesting"] = "True"
+ytcfg["yt","__withintesting"] = True
 np.seterr(all = 'ignore')
 
 def _strip_ftype(field):

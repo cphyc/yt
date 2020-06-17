@@ -7,7 +7,7 @@ from yt.testing import \
 
 def setup():
     from yt.config import ytcfg
-    ytcfg["yt","__withintesting"] = "True"
+    ytcfg["yt","__withintesting"] = True
 
 def test_data_collection():
     # We decompose in different ways

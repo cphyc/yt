@@ -106,13 +106,13 @@ def enable_parallelism(suppress_logging=False, communicator=None):
     communication_system.push(communicator)
     ytcfg["yt","__global_parallel_rank"] = str(communicator.rank)
     ytcfg["yt","__global_parallel_size"] = str(communicator.size)
-    ytcfg["yt","__parallel"] = "True"
+    ytcfg["yt","__parallel"] = True
     if exe_name == "embed_enzo" or \
         ("_parallel" in dir(sys) and sys._parallel):
-        ytcfg["yt","inline"] = "True"
+        ytcfg["yt","inline"] = True
     if communicator.rank > 0:
         if ytcfg.getboolean("yt","LogFile"):
-            ytcfg["yt","LogFile"] = "False"
+            ytcfg["yt","LogFile"] = False
             yt.utilities.logger.disable_file_logging()
     yt.utilities.logger.uncolorize_logging()
     # Even though the uncolorize function already resets the format string,
@@ -639,7 +639,7 @@ class CommunicationSystem(object):
         ytcfg["yt","__topcomm_parallel_size"] = str(new_comm.size)
         ytcfg["yt","__topcomm_parallel_rank"] = str(new_comm.rank)
         if new_comm.rank > 0 and ytcfg.getboolean("yt","serialize"):
-            ytcfg["yt","onlydeserialize"] = "True"
+            ytcfg["yt","onlydeserialize"] = True
 
     def pop(self):
         self.communicators.pop()

@@ -17,7 +17,7 @@ from yt.units import kpc
 
 def setup():
     from yt.config import ytcfg
-    ytcfg["yt","__withintesting"] = "True"
+    ytcfg["yt","__withintesting"] = True
 
 @requires_file(cyl_2d)
 @requires_file(cyl_3d)
