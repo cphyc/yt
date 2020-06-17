@@ -972,7 +972,7 @@ class PWViewerMPL(PlotWindow):
             self.plots[f] = WindowPlotMPL(
                 ia, self._field_transform[f].name,
                 self._field_transform[f].func,
-                self._colormaps[f], extent, zlim,
+                self._get_colormap(f), extent, zlim,
                 self.figure_size, font_size,
                 self.aspect, fig, axes, cax, self._projection,
                 self._transform)

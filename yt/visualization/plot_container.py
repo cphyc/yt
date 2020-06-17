@@ -798,13 +798,23 @@ class ImagePlotContainer(PlotContainer):
             data_source, figure_size, fontsize)
         self.plots = PlotDictionary(data_source)
         self._callbacks = []
-        self._colormaps = defaultdict(
-            lambda: ytcfg.get("yt", "default_colormap"))
+        self._colormaps = {}
         self._cbar_minorticks = {}
         self._background_color = PlotDictionary(
             self.data_source, lambda: 'w')
         self._colorbar_label = PlotDictionary(
             self.data_source, lambda: None)
+
+    def _get_colormap(self, field):
+        default_cmap = ytcfg.get("yt", "default_colormap")
+        if field in self._colormaps:
+            cmap = self._colormaps[field]
+        else:
+            ftype, fname = self.data_source._determine_fields(field)[0]
+            cmap = ytcfg.get(ftype, fname, 'cmap', default=default_cmap)
+            self._colormaps[field] = cmap
+
+        return cmap
 
     @accepts_all_fields
     @invalidate_plot
@@ -844,7 +854,7 @@ class ImagePlotContainer(PlotContainer):
 
         """
         if color is None:
-            cmap = self._colormaps[field]
+            cmap = self._get_colormap(field)
             if isinstance(cmap, str):
                 try:
                     cmap = yt_colormaps[cmap]

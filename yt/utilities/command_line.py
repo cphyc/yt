@@ -270,7 +270,7 @@ _common_options = dict(
                          "use a comma to separate field tuple values")),
     cmap    = dict(longname="--colormap",
                    action="store", type=str,
-                   dest="cmap", default=_default_colormap,
+                   dest="cmap", default=None,
                    help="Colormap name"),
     zlim    = dict(short="-z", longname="--zlim",
                    action="store", type=float,
@@ -753,7 +753,8 @@ class YTMapserverCmd(YTCommand):
             p = SlicePlot(ds, args.axis, args.field, data_source=ad,
                                center=center, width=width)
         p.set_log('all', args.takelog)
-        p.set_cmap('all', args.cmap)
+        if args.cmap:
+            p.set_cmap('all', args.cmap)
 
         PannableMapServer(p.data_source, args.field, args.takelog, args.cmap)
         try:
@@ -947,7 +948,8 @@ class YTPlotCmd(YTCommand):
             if args.field_unit:
                 plt.set_unit(args.field, args.field_unit)
 
-            plt.set_cmap(args.field, args.cmap)
+            if args.cmap:
+                plt.set_cmap(args.field, args.cmap)
             plt.set_log(args.field, args.takelog)
             if args.zlim:
                 plt.set_zlim(args.field,*args.zlim)
