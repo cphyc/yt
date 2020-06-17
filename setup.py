@@ -430,6 +430,7 @@ if __name__ == "__main__":
             'numpy>=1.10.4',
             'IPython>=1.0',
             'unyt>=2.2.2',
+            'pytoml>=0.1'
         ],
         extras_require = {
             'hub':  ["girder_client"],

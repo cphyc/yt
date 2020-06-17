@@ -4,6 +4,8 @@ import sys
 import argparse
 from yt.config import CURRENT_CONFIG_FILE, _OLD_CONFIG_FILE, YTConfigParser
 import configparser
+import pytoml
+
 
 CONFIG = YTConfigParser()
 CONFIG.read([CURRENT_CONFIG_FILE])
@@ -27,30 +29,51 @@ def write_config(fd=None):
     else:
         CONFIG.write(fd)
 
+def __helper(val, casts):
+    for cast in casts:
+        try:
+            return cast(val)
+        except ValueError:
+            pass
+    return val
+
+def __interpolation(val):
+    if val == 'True':
+        ret = True
+    elif val == 'False':
+        ret = False
+    else:
+        ret = __helper(val, (int, float))
+    return ret
+
+
 def migrate_config():
     if not os.path.exists(_OLD_CONFIG_FILE):
         print('Old config not found.')
-        sys.exit()
+        sys.exit(1)
     CONFIG.read(_OLD_CONFIG_FILE)
     print('Writing a new config file to: {}'.format(CURRENT_CONFIG_FILE))
-    write_config()
     print('Backing up the old config file: {}.bak'.format(_OLD_CONFIG_FILE))
-    os.rename(_OLD_CONFIG_FILE, _OLD_CONFIG_FILE + '.bak')
+    # os.rename(_OLD_CONFIG_FILE, _OLD_CONFIG_FILE + '.bak')
 
-    old_config_dir = os.path.dirname(_OLD_CONFIG_FILE)
-    try:
-        plugin_file = CONFIG.get('yt', 'pluginfilename')
-        if plugin_file and \
-                os.path.exists(os.path.join(old_config_dir, plugin_file)):
-            print('Migrating plugin file {} to new location'.format(plugin_file))
-            shutil.copyfile(
-                os.path.join(old_config_dir, plugin_file),
-                os.path.join(os.path.dirname(CURRENT_CONFIG_FILE), plugin_file))
-            print('Backing up the old plugin file: {}.bak'.format(_OLD_CONFIG_FILE))
-            plugin_file = os.path.join(old_config_dir, plugin_file)
-            os.rename(plugin_file, plugin_file + '.bak')
-    except configparser.NoOptionError:
-        pass
+    cp = configparser.ConfigParser()
+    cp.read(_OLD_CONFIG_FILE)
+
+    print("***********************************************")
+    print("* Upgrading configuration file to new format; *")
+    print("***********************************************")
+
+    # Convert old config to dict
+    config = {}
+    for section in cp.sections():
+        config[section] = {}
+        for key, val in cp.items(section):
+            interpolated_val = __interpolation(val)
+            config[section][key] = interpolated_val
+            print("Setting %s to %s (type: %s)" % (val, interpolated_val, type(interpolated_val)))
+
+    with open(CURRENT_CONFIG_FILE, 'w') as f:
+        pytoml.dump(config, f)
 
 
 def rm_config(section, option):

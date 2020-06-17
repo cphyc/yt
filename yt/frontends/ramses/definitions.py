@@ -64,7 +64,7 @@ particle_families = {
     'gas_tracer': 0
 }
 
-if ytcfg.has_section('ramses-families'):
+if 'ramses-families' in ytcfg:
     for key in particle_families.keys():
         val = ytcfg.getint('ramses-families', key, fallback=None)
         if val is not None:

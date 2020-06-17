@@ -300,7 +300,7 @@ class HydroFieldFileHandler(FieldFileHandler):
             # We get no fields for old-style hydro file descriptor
             ok = len(fields) > 0
 
-        elif cls.config_field and ytcfg.has_section(cls.config_field):
+        elif cls.config_field and cls.config_field in ytcfg:
             # Or this is given by the config
             cfg = ytcfg.get(cls.config_field, 'fields')
             known_fields = []
