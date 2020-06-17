@@ -10,6 +10,24 @@ import pytoml
 CONFIG = YTConfigParser()
 CONFIG.read([CURRENT_CONFIG_FILE])
 
+def __interpolation(val):
+    """Try to interpolate the value as bool, int, float (in this order)."""
+    def helper(val, casts):
+        for cast in casts:
+            try:
+                return cast(val)
+            except ValueError:
+                pass
+        return val
+
+    if val.lower() == 'True':
+        ret = True
+    elif val.lower() == 'False':
+        ret = False
+    else:
+        ret = helper(val, (int, float))
+    return ret
+
 
 def get_config(section, option):
     return CONFIG.get(section, option)
@@ -18,9 +36,8 @@ def get_config(section, option):
 def set_config(section, option, value):
     if not CONFIG.has_section(section):
         CONFIG.add_section(section)
-    CONFIG.set(section, option, value)
+    CONFIG.set(section, option, __interpolation(value))
     write_config()
-
 
 def write_config(fd=None):
     if fd is None:
@@ -28,23 +45,6 @@ def write_config(fd=None):
             CONFIG.write(fd)
     else:
         CONFIG.write(fd)
-
-def __helper(val, casts):
-    for cast in casts:
-        try:
-            return cast(val)
-        except ValueError:
-            pass
-    return val
-
-def __interpolation(val):
-    if val == 'True':
-        ret = True
-    elif val == 'False':
-        ret = False
-    else:
-        ret = __helper(val, (int, float))
-    return ret
 
 
 def migrate_config():

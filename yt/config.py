@@ -151,6 +151,14 @@ class YTConfigParser:
     def __setitem__(self, path, value):
         self.set(path[0], path[1], value)
 
+    def write(self, fd):
+        pytoml.dump(self.config, fd)
+
+    def remove_option(self, section, option):
+        if self.has_section(section):
+            if option in self.config[section]:
+                del self.config[section][option]
+
 
 ytcfg = YTConfigParser(ytcfg_defaults)
 ytcfg.read([CURRENT_CONFIG_FILE, 'yt.toml'])
