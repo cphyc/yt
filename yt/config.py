@@ -93,6 +93,8 @@ class YTConfigParser(dict):
         self.config = {'yt': defaults}
 
     def read(self, filenames):
+        if isinstance(filenames, str):
+            filenames = [filenames]
         ok_filenames = []
         for i, fname in enumerate(filenames):
             if not os.path.exists(fname):
