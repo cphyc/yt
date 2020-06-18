@@ -44,6 +44,7 @@ from yt.utilities.exceptions import \
     YTDataTypeUnsupported, \
     YTInvalidFieldType, \
     YTUnitNotRecognized
+from yt.config import ytcfg
 from unyt.exceptions import UnitConversionError
 
 from .geo_plot_utils import get_mpl_transform
@@ -904,7 +905,8 @@ class PWViewerMPL(PlotWindow):
             if f in self.plots.keys():
                 zlim = (self.plots[f].zmin, self.plots[f].zmax)
             else:
-                zlim = (None, None)
+                zlim = ytcfg.get(*f, 'zlim', default=(None, None))
+                print('Read %s for %s' % (zlim, f))
 
             image = self.frb[f]
             if self._field_transform[f] == log_transform:
