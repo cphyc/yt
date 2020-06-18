@@ -906,7 +906,6 @@ class PWViewerMPL(PlotWindow):
                 zlim = (self.plots[f].zmin, self.plots[f].zmax)
             else:
                 zlim = ytcfg.get(*f, 'zlim', default=(None, None))
-                print('Read %s for %s' % (zlim, f))
 
             image = self.frb[f]
             if self._field_transform[f] == log_transform:
