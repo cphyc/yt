@@ -4,7 +4,7 @@ import sys
 import argparse
 from yt.config import CURRENT_CONFIG_FILE, _OLD_CONFIG_FILE, YTConfigParser
 import configparser
-import pytoml
+import toml
 
 
 CONFIG = YTConfigParser()
@@ -73,7 +73,7 @@ def migrate_config():
             print("Setting %s to %s (type: %s)" % (val, interpolated_val, type(interpolated_val)))
 
     with open(CURRENT_CONFIG_FILE, 'w') as f:
-        pytoml.dump(config, f)
+        toml.dump(config, f)
 
 
 def rm_config(section, option):

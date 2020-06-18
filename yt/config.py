@@ -1,7 +1,9 @@
 import os
 import warnings
 import configparser
-import pytoml
+import toml
+import warnings
+
 
 ytcfg_defaults = dict(
     serialize = False,
@@ -95,19 +97,14 @@ class YTConfigParser:
     def read(self, filenames):
         if isinstance(filenames, str):
             filenames = [filenames]
-        ok_filenames = []
-        for i, fname in enumerate(filenames):
-            if not os.path.exists(fname):
-                continue
-            try:
-                with open(fname, 'r') as f:
-                    cfg = pytoml.load(f)
-                _deep_update(self.config, cfg)
+        filenames = (_ for _ in filenames if os.path.isfile(_))
 
-                ok_filenames.append(fname)
-            except pytoml.TomlError:
-                pass
-        return ok_filenames
+        for fname in filenames:
+            try:
+                loaded_config = toml.load(fname)
+                _deep_update(self.config, loaded_config)
+            except toml.TomlDecodeError:
+                warnings.warn('An error occured while parsing configuration file %s!' % fname)
 
     def get(self, *keys, default=None):
         head = self.config
@@ -152,7 +149,7 @@ class YTConfigParser:
         self.set(path[0], path[1], value)
 
     def write(self, fd):
-        pytoml.dump(self.config, fd)
+        toml.dump(self.config, fd)
 
     def remove_option(self, section, option):
         if self.has_section(section):
