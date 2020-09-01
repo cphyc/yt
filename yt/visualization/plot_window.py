@@ -298,7 +298,7 @@ class PlotWindow(ImagePlotContainer):
             self.buff_size,
             self.antialias,
             periodic=self._periodic,
-            filters=old_filders
+            filters=old_filters,
         )
 
         # At this point the frb has the valid bounds, size, aliasing, etc.
