@@ -44,7 +44,6 @@ from yt.visualization import (
 )
 
 mylog = logging.getLogger("nose.plugins.answer-testing")
-run_big_data = False
 
 # Set the latest gold and local standard filenames
 _latest = ytcfg.get("yt", "gold_standard_filename")
@@ -176,8 +175,7 @@ class AnswerTesting(Plugin):
         AnswerTestingTest.options = options
 
         self.local_results = options.local_results
-        global run_big_data
-        run_big_data = options.big_data
+        ytcfg.set("yt", "internals", "run_big_data", options.big_data)
 
     def finalize(self, result=None):
         if not self.store_results:
@@ -1134,7 +1132,7 @@ def requires_sim(sim_fn, sim_type, big_data=False, file_check=False):
     def ftrue(func):
         return func
 
-    if not run_big_data and big_data:
+    if not ytcfg.get("yt", "internals", "run_big_data") and big_data:
         return ffalse
     elif not can_run_sim(sim_fn, sim_type, file_check):
         return ffalse
@@ -1178,7 +1176,7 @@ def requires_ds(ds_fn, big_data=False, file_check=False):
     def ftrue(func):
         return func
 
-    if not run_big_data and big_data:
+    if not ytcfg.get("yt", "internals", "run_big_data") and big_data:
         return ffalse
     elif not can_run_ds(ds_fn, file_check):
         return ffalse
