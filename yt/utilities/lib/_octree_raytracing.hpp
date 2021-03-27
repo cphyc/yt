@@ -232,7 +232,6 @@ public:
         cast_ray(&r, keyList, tList);
     }
 
-
     void compute_neighbours() {
         std::queue<Node*> queue;
         Node *parent_node, *child_node, *neigh_node;
@@ -248,7 +247,12 @@ public:
             queue.pop();
             for (unsigned char i = 0; i < 8; ++i) {
                 // Compute cell index
-                auto ijk = iflat2ijk(i);
+                uint8_t ijk[3] = {
+                    (i & 0b100) >> 2,
+                    (i & 0b010) >> 1,
+                    (i & 0b001) >> 0
+                };
+
                 child_node = parent_node->children[i];
 
                 // Nothing to do if child doesn't exist
@@ -256,10 +260,8 @@ public:
                     continue;
 
                 // Add child to queue if not a leaf cell
-                if (child_node->children == nullptr)
-                    continue;
-
-                queue.push(child_node);
+                if (child_node->children != nullptr)
+                    queue.push(child_node);
 
                 if (child_node->neighbours == nullptr)
                     child_node->neighbours = (Node**) malloc(sizeof(Node*)*6);
@@ -274,7 +276,6 @@ public:
                             // 1. neighbour may be in same parent node
                             neigh_node = parent_node->children[ichild];
                             if (neigh_node == nullptr) {
-                                std::cout << "Setting neigh_node to parent_node" << parent_node->key << std::endl;
                                 neigh_node = parent_node;
                             }
                         } else {
@@ -284,7 +285,9 @@ public:
                             } else {
                                 neigh_node = parent_node->neighbours[ineigh];
                                 if (neigh_node != nullptr)
-                                    neigh_node = neigh_node->children[ichild];
+                                    if (neigh_node->children != nullptr)
+                                        if (neigh_node->children[ichild] != nullptr)
+                                            neigh_node = neigh_node->children[ichild];
                             }
                         }
                         child_node->neighbours[ineigh] = neigh_node;
