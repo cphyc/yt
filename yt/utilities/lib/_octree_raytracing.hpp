@@ -8,6 +8,7 @@
 #include <random>
 #include <string>
 #include <fstream>
+#include <queue>
 
 
 typedef double F;
@@ -16,12 +17,13 @@ const int Ndim = 3;
 /*  A simple node struct that contains a key and a fixed number of children,
     typically Nchildren = 2**Ndim
  */
-template <typename keyType, int Nchildren>
+template <typename keyType, int Nchildren, int Nneighbours>
 struct GenericNode
 {
     // Tree data
-    GenericNode<keyType, Nchildren>** children = nullptr;
-    GenericNode<keyType, Nchildren>* parent = nullptr;
+    GenericNode<keyType, Nchildren, Nneighbours>** children = nullptr;
+    GenericNode<keyType, Nchildren, Nneighbours>* parent = nullptr;
+    GenericNode<keyType, Nchildren, Nneighbours>** neighbours = nullptr;
 
     // Node data
     keyType key;
@@ -94,7 +96,7 @@ inline std::array<bool, Ndim> iflat2ijk(unsigned char iflat) {
 /*  A class to build an octree and cast rays through it. */
 template <class keyType>
 class Octree {
-    typedef GenericNode<keyType, (1<<Ndim)> Node;
+    typedef GenericNode<keyType, (1<<Ndim), 2*Ndim> Node;
     typedef std::vector<keyType> keyVector;
     typedef std::array<F, Ndim> Pos;
     typedef std::array<int, Ndim> iPos;
@@ -228,6 +230,68 @@ public:
     void cast_ray(double* o, double* d, keyVector &keyList, std::vector<F> &tList) {
         Ray r(o, d, -1e99, 1e99);
         cast_ray(&r, keyList, tList);
+    }
+
+
+    void compute_neighbours() {
+        std::queue<Node*> queue;
+        Node *parent_node, *child_node, *neigh_node;
+        Node *root = this->root;
+
+        std::cout << this->root << std::endl;
+
+        // Neighbour index is -x +x -y +y -z +z
+        queue.push(this->root);
+
+        while (!queue.empty()) {
+            parent_node = queue.front();
+            queue.pop();
+            for (unsigned char i = 0; i < 8; ++i) {
+                // Compute cell index
+                auto ijk = iflat2ijk(i);
+                child_node = parent_node->children[i];
+
+                // Nothing to do if child doesn't exist
+                if (child_node == nullptr)
+                    continue;
+
+                // Add child to queue if not a leaf cell
+                if (child_node->children == nullptr)
+                    continue;
+
+                queue.push(child_node);
+
+                if (child_node->neighbours == nullptr)
+                    child_node->neighbours = (Node**) malloc(sizeof(Node*)*6);
+
+                // Link child to all its neighbours
+                for (auto idim = 0, ineigh = 0; idim < 3; ++idim) {
+                    for (uint8_t idir = 0; idir < 2; ++idir, ++ineigh) {
+                        // Neighbour has the same index as current cell with bit flit
+                        uint8_t ichild = i ^ (0b1 << (2-idim));
+                        // Two cases:
+                        if (ijk[idim] == idir) {
+                            // 1. neighbour may be in same parent node
+                            neigh_node = parent_node->children[ichild];
+                            if (neigh_node == nullptr) {
+                                std::cout << "Setting neigh_node to parent_node" << parent_node->key << std::endl;
+                                neigh_node = parent_node;
+                            }
+                        } else {
+                            // 2. neighbour is not in same parent node
+                            if (parent_node == root) {
+                                neigh_node = nullptr;
+                            } else {
+                                neigh_node = parent_node->neighbours[ineigh];
+                                if (neigh_node != nullptr)
+                                    neigh_node = neigh_node->children[ichild];
+                            }
+                        }
+                        child_node->neighbours[ineigh] = neigh_node;
+                    }
+                }
+            }
+        }
     }
 
 private:
@@ -376,4 +440,5 @@ private:
             return iz;
         }
     }
+
 };

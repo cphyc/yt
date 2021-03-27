@@ -43,5 +43,8 @@ cdef class _OctreeRayTracing:
             ii[2] = ipos_view[i, 2]
             self.oct.insert_node_no_ret(ii, lvl_view[i], <int> key[i])
 
+    def compute_neighbours(self):
+        self.oct.compute_neighbours()
+
     def __dealloc__(self):
         del self.oct
