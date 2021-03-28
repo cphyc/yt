@@ -46,5 +46,8 @@ cdef class _OctreeRayTracing:
     def compute_neighbours(self):
         self.oct.compute_neighbours()
 
+    def get_neighbours(self):
+        return self.oct.get_neighbours()
+
     def __dealloc__(self):
         del self.oct

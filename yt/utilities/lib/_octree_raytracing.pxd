@@ -30,6 +30,7 @@ cdef extern from "_octree_raytracing.hpp":
         void insert_node_no_ret(const int* ipos, const int lvl, T key)
         void cast_ray(double* origins, double* directions, vector[T] keyList, vector[double] tList)
         void compute_neighbours()
+        vector[np.int64_t] get_neighbours()
 
 cdef class _OctreeRayTracing:
     cdef Octree[int]* oct

@@ -245,7 +245,7 @@ public:
         while (!queue.empty()) {
             parent_node = queue.front();
             queue.pop();
-            for (unsigned char i = 0; i < 8; ++i) {
+            for (uint8_t i = 0; i < 8; ++i) {
                 // Compute cell index
                 uint8_t ijk[3] = {
                     (i & 0b100) >> 2,
@@ -259,7 +259,7 @@ public:
                 if (child_node == nullptr)
                     continue;
 
-                // Add child to queue if not a leaf cell
+                // Add child to queue if it is not a leaf cell
                 if (child_node->children != nullptr)
                     queue.push(child_node);
 
@@ -267,19 +267,20 @@ public:
                     child_node->neighbours = (Node**) malloc(sizeof(Node*)*6);
 
                 // Link child to all its neighbours
-                for (auto idim = 0, ineigh = 0; idim < 3; ++idim) {
+                size_t ineigh = 0;
+                for (auto idim = 0; idim < 3; ++idim) {
                     for (uint8_t idir = 0; idir < 2; ++idir, ++ineigh) {
                         // Neighbour has the same index as current cell with bit flit
-                        uint8_t ichild = i ^ (0b1 << (2-idim));
+                        uint8_t ichild = i ^ (0b100 >> idim);
                         // Two cases:
                         if (ijk[idim] == idir) {
-                            // 1. neighbour may be in same parent node
+                            // 1. neighbour (if any) is in same parent node
                             neigh_node = parent_node->children[ichild];
                             if (neigh_node == nullptr) {
                                 neigh_node = parent_node;
                             }
                         } else {
-                            // 2. neighbour is not in same parent node
+                            // 2. neighbour (if any) is not in same parent node
                             if (parent_node == root) {
                                 neigh_node = nullptr;
                             } else {
@@ -297,7 +298,31 @@ public:
         }
     }
 
+    std::vector<int64_t> get_neighbours() {
+        std::vector<int64_t> neighbours(global_index*6, -1);
+        this->depth_first(this->root, neighbours);
+        return neighbours;
+    }
+
 private:
+
+    void depth_first(Node* node, std::vector<int64_t> &neighbours) {
+        Node *child, *neigh;
+        if (node->children == nullptr)
+            return;
+
+        for (auto i = 0; i < 8; ++i) {
+            child = node->children[i];
+            if (child != nullptr) {
+                for (auto i = 0; i < 6; ++i) {
+                    neigh = child->neighbours[i];
+                    if (neigh != nullptr)
+                        neighbours[child->index*6+i] = neigh->index;
+                }
+                this->depth_first(child, neighbours);
+            }
+        }
+    }
 
     /*
         Upsert a node as a child of another.
