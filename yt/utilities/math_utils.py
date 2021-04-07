@@ -4,41 +4,6 @@ import numpy as np
 
 from yt.units.yt_array import YTArray
 
-prec_accum = {
-    int: np.int64,
-    np.int8: np.int64,
-    np.int16: np.int64,
-    np.int32: np.int64,
-    np.int64: np.int64,
-    np.uint8: np.uint64,
-    np.uint16: np.uint64,
-    np.uint32: np.uint64,
-    np.uint64: np.uint64,
-    float: np.float64,
-    np.float16: np.float64,
-    np.float32: np.float64,
-    np.float64: np.float64,
-    complex: np.complex128,
-    np.complex64: np.complex128,
-    np.complex128: np.complex128,
-    np.dtype("int"): np.int64,
-    np.dtype("int8"): np.int64,
-    np.dtype("int16"): np.int64,
-    np.dtype("int32"): np.int64,
-    np.dtype("int64"): np.int64,
-    np.dtype("uint8"): np.uint64,
-    np.dtype("uint16"): np.uint64,
-    np.dtype("uint32"): np.uint64,
-    np.dtype("uint64"): np.uint64,
-    np.dtype("float"): np.float64,
-    np.dtype("float16"): np.float64,
-    np.dtype("float32"): np.float64,
-    np.dtype("float64"): np.float64,
-    np.dtype("complex"): np.complex128,
-    np.dtype("complex64"): np.complex128,
-    np.dtype("complex128"): np.complex128,
-}
-
 
 def periodic_position(pos, ds):
     r"""Assuming periodicity, find the periodic position within the domain.
