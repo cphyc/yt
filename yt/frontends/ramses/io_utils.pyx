@@ -41,11 +41,12 @@ def read_amr(FortranFile f, dict headers,
     pos = np.empty((0, 3), dtype=np.float64)
     buffer_size = 0
     # Compute number of fields to skip. This should be 31 in 3 dimensions
-    skip_len = (1          # father index
-                + 2*ndim   # neighbor index
-                + 2**ndim  # son index
-                + 2**ndim  # cpu map
-                + 2**ndim  # refinement map
+    skip_len = (
+        1          # father index
+        + 2*ndim   # neighbor index
+        + 2**ndim  # son index
+        + 2**ndim  # cpu map
+        + 2**ndim  # refinement map
     )
     # Initialize values
     max_level = 0

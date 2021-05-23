@@ -577,19 +577,23 @@ cdef class OctreeContainer:
         int count_boundary = 0,
         int no = -1,
     ):
-        cdef int p, i
-        cdef int ind[3]
+        cdef int p, i, lvl
+        cdef int ind[3], ind2[3]
+        cdef np.uint64_t pind[3]
         cdef int nb = 0
         cdef Oct *cur
         cdef np.float64_t pp[3]
         cdef np.float64_t cp[3]
         cdef np.float64_t dds[3]
+        cdef np.uint64_t mask
         if no == -1:
             no = pos.shape[0] # number of octs
         if curdom > self.num_domains: return 0
         cdef OctAllocationContainer *cont = self.domains.get_cont(curdom - 1)
         cdef int initial = cont.n_assigned
         cdef int in_boundary = 0
+        for i in range(3):
+            dds[i] = (self.DRE[i] - self.DLE[i])/self.nn[i]
         # How do we bootstrap ourselves?
         for p in range(no):
             #for every oct we're trying to add find the
@@ -597,32 +601,29 @@ cdef class OctreeContainer:
             in_boundary = 0
             for i in range(3):
                 pp[i] = pos[p, i]
-                dds[i] = (self.DRE[i] - self.DLE[i])/self.nn[i]
-                ind[i] = <np.int64_t> ((pp[i] - self.DLE[i])/dds[i])
-                cp[i] = (ind[i] + 0.5) * dds[i] + self.DLE[i]
+                ind[i] = <np.int64_t> ((pp[i] - self.DLE[i]) / dds[i])
+                pind[i] = <np.uint64_t> ((pp[i] - self.DLE[i] - ind[i]*dds[i]) / dds[i] * (1 << curlevel))
                 if ind[i] < 0 or ind[i] >= self.nn[i]:
                     in_boundary = 1
             if skip_boundary == in_boundary == 1:
                 nb += count_boundary
                 continue
             cur = self.next_root(curdom, ind)
+
             if cur == NULL: raise RuntimeError
             # Now we find the location we want
             # Note that RAMSES I think 1-findiceses levels, but we don't.
-            for _ in range(curlevel):
+            mask = 0b1 << (curlevel - 1)
+            for lvl in range(curlevel):
                 # At every level, find the cell this oct
                 # lives inside
-                for i in range(3):
-                    #as we get deeper, oct size halves
-                    dds[i] = dds[i] / 2.0
-                    if cp[i] > pp[i]:
-                        ind[i] = 0
-                        cp[i] -= dds[i]/2.0
-                    else:
-                        ind[i] = 1
-                        cp[i] += dds[i]/2.0
+                ind[0] = (pind[0] & mask) > 0
+                ind[1] = (pind[1] & mask) > 0
+                ind[2] = (pind[2] & mask) > 0
+
                 # Check if it has not been allocated
                 cur = self.next_child(curdom, ind, cur)
+                mask >>= 1
             # Now we should be at the right level
             cur.domain = curdom
             cur.file_ind = p
