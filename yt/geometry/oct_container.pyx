@@ -568,18 +568,24 @@ cdef class OctreeContainer:
     @cython.boundscheck(False)
     @cython.wraparound(False)
     @cython.cdivision(True)
-    def add(self, int curdom, int curlevel,
-            np.ndarray[np.float64_t, ndim=2] pos,
-            int skip_boundary = 1,
-            int count_boundary = 0):
-        cdef int no, p, i
+    def add(
+        self,
+        int curdom,
+        int curlevel,
+        np.ndarray[np.float64_t, ndim=2] pos,
+        int skip_boundary = 1,
+        int count_boundary = 0,
+        int no = -1,
+    ):
+        cdef int p, i
         cdef int ind[3]
         cdef int nb = 0
         cdef Oct *cur
         cdef np.float64_t pp[3]
         cdef np.float64_t cp[3]
         cdef np.float64_t dds[3]
-        no = pos.shape[0] #number of octs
+        if no == -1:
+            no = pos.shape[0] # number of octs
         if curdom > self.num_domains: return 0
         cdef OctAllocationContainer *cont = self.domains.get_cont(curdom - 1)
         cdef int initial = cont.n_assigned
