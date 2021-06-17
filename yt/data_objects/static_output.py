@@ -1,8 +1,10 @@
 import abc
 import functools
+import inspect
 import itertools
 import os
 import pickle
+import re
 import time
 import weakref
 from collections import defaultdict
@@ -829,6 +831,54 @@ class Dataset(abc.ABC):
                 f'Defaulting to \'("{ft}", "{fn}")\'.'
             )
             issue_deprecation_warning(msg, since="4.0.0", removal="4.1.0")
+
+        out_ftype, out_fname = field_info.name
+
+        def autoFix(ftype, fname):
+            def match(lines):
+                test = (f'"{fname}"', f"'{fname}'")
+                for t in test:
+                    for l in lines:
+                        if t in l:
+                            return True
+                return False
+
+            for stack in inspect.stack():
+                if not match(stack.code_context):
+                    continue
+                lineno = stack.lineno
+                filename = stack.filename
+                with open(filename) as f:
+                    lines = f.readlines()
+
+                corrected_lines = lines.copy()
+                nlines = len(stack.code_context)
+                line_to_fix = corrected_lines[lineno - 1 : lineno - 1 + nlines]
+
+                r = re.compile(f'(?<!\\w", )("{fname}")')
+
+                def fix(line):
+                    return re.sub(r, f'("{ftype}", "{fname}")', line)
+
+                line_to_fix = [fix(l) for l in line_to_fix]
+                for i in range(nlines):
+                    corrected_lines[lineno - 1 + i] = line_to_fix[i]
+
+                with open(filename, mode="w") as f:
+                    f.writelines(corrected_lines)
+                # diff_file.writelines(
+                #     unified_diff(lines, corrected_lines, fromfile=rel_path, tofile=rel_path)
+                # )
+                # diff_file.flush()
+                # return
+
+        guessed = not ((ftype == out_ftype) and (fname == out_fname)) or is_ambiguous
+        if guessed:
+            try:
+                autoFix(out_ftype, out_fname)
+            except TypeError:  # happens when line cannot be found
+                pass
+
         return field_info
 
     def _get_field_info_helper(self, ftype, fname=None):
