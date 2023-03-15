@@ -195,6 +195,10 @@ class GadgetFOFDataset(ParticleDataset):
             self.parameters = {
                 str(field): val for field, val in f["Header"].attrs.items()
             }
+            if "Parameters" in f:
+                self.parameters.update(
+                    {str(field): val for field, val in f["Parameters"].attrs.items()}
+                )
 
         self.dimensionality = 3
         self.refine_by = 2
