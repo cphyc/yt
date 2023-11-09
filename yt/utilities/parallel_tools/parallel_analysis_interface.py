@@ -261,6 +261,51 @@ def parallel_simple_proxy(func):
     return single_proc_results
 
 
+def parallel_map(self, func, parallelized_arg: int = 0, strategy: str = "gather_all"):
+    """
+    This is a decorator that distributes the arguments
+    of a function to all processors and gathers the results
+    on all processors.
+    """
+
+    @wraps(func)
+    def single_proc_results(*args, **kwargs):
+        if hasattr(self, "dont_wrap"):
+            if func.__name__ in self.dont_wrap:
+                return func(self, *args, **kwargs)
+        if not parallel_capable or not self._distributed:
+            return func(self, *args, **kwargs)
+
+        comm = _get_comm((self,))
+        local_values = []
+        for a in parallel_objects(list(args[parallelized_arg])):
+            new_args = (*args[:parallelized_arg], [a], *args[parallelized_arg + 1 :])
+            ret = func(*new_args, **kwargs)
+            local_values.append(ret)
+
+        # If the returned type is a dictionary of arrays, concat the arrays
+        if len(local_values) == 0:
+            pass
+        elif isinstance(local_values[0], dict):
+            concat_local_values = {
+                k: np.concatenate([lv[k] for lv in local_values])
+                for k in local_values[0].keys()
+            }
+        else:
+            concat_local_values = np.concatenate(local_values)
+
+        if strategy == "gather_all":
+            return comm.par_combine_object(concat_local_values, op="cat")
+        elif strategy == "gather_root":
+            ret = comm.par_combine_object(concat_local_values, op="cat")
+            if 0 == comm.rank:
+                return ret
+            else:
+                return {k: np.empty(0, dtype=v.dtype) for k, v in ret.items()}
+
+    return single_proc_results
+
+
 class ParallelDummy(type):
     """
     This is a base class that, on instantiation, replaces all attributes that

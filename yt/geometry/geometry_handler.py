@@ -15,6 +15,7 @@ from yt.utilities.logger import ytLogger as mylog
 from yt.utilities.on_demand_imports import _h5py as h5py
 from yt.utilities.parallel_tools.parallel_analysis_interface import (
     ParallelAnalysisInterface,
+    parallel_map,
     parallel_root_only,
 )
 
@@ -238,9 +239,11 @@ class Index(ParallelAnalysisInterface, abc.ABC):
             chunk_size = dobj.size
         else:
             chunk_size = chunk.data_size
-        fields_to_return = self.io._read_fluid_selection(
-            self._chunk_io(dobj), selector, fields_to_read, chunk_size
-        )
+        fields_to_return = parallel_map(
+            self,
+            self.io._read_fluid_selection,
+            strategy="gather_root",
+        )(self._chunk_io(dobj), selector, fields_to_read, chunk_size)
         return fields_to_return, fields_to_generate
 
     def _chunk(self, dobj, chunking_style, ngz=0, **kwargs):

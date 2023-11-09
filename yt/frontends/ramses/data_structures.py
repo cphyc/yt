@@ -357,6 +357,7 @@ class RAMSESDomainFile:
         )
         root_nodes = self.amr_header["numbl"][self.ds.min_level, :].sum()
         oct_handler.allocate_domains(self.total_oct_count, root_nodes)
+
         mylog.debug(
             "Reading domain AMR % 4i (%0.3e, %0.3e)",
             self.domain_id,
