@@ -60,6 +60,8 @@ class ParticleFileHandler(abc.ABC, HandlerMixin):
     )
     local_particle_count = None  # The number of particle in the domain
 
+    _handler_list: set["ParticleFileHandler"] = PARTICLE_HANDLERS
+
     def __init_subclass__(cls, *args, **kwargs):
         """
         Registers subclasses at creation.
@@ -160,7 +162,7 @@ class DefaultParticleFileHandler(ParticleFileHandler):
 
         self.header = hvals
         self.local_particle_count = hvals["npart"]
-        extra_particle_fields = self.ds._extra_particle_fields
+        extra_particle_fields = self.domain.ds._extra_particle_fields
 
         if self.has_descriptor:
             particle_fields = _read_part_binary_file_descriptor(self.file_descriptor)

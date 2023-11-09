@@ -19,6 +19,7 @@ from yt.geometry.oct_geometry_handler import OctreeIndex
 from yt.utilities.cython_fortran_utils import FortranFile as fpu
 from yt.utilities.lib.cosmology_time import friedman
 from yt.utilities.on_demand_imports import _f90nml as f90nml
+from yt.utilities.parallel_tools.parallel_analysis_interface import parallel_objects
 from yt.utilities.physical_constants import kb, mp
 from yt.utilities.physical_ratios import cm_per_mpc
 
@@ -30,11 +31,11 @@ from .definitions import (
     particle_families,
     ramses_header,
 )
-from .field_handlers import get_field_handlers
+from .field_handlers import FieldFileHandler, get_field_handlers
 from .fields import _X, RAMSESFieldInfo
 from .hilbert import get_cpu_list
 from .io_utils import fill_hydro, read_amr
-from .particle_handlers import get_particle_handlers
+from .particle_handlers import ParticleFileHandler, get_particle_handlers
 
 
 class RAMSESFileSanitizer:
@@ -201,8 +202,7 @@ class RAMSESDomainFile:
             )
         else:
             basename = "%s/%%s_%s.out%05i" % (basedir, num, domain_id)
-        for t in ["grav", "amr"]:
-            setattr(self, f"{t}_fn", basename % t)
+        self.amr_fn = basename % "amr"
         self._part_file_descriptor = part_file_descriptor
         self.max_level = self.ds.parameters["levelmax"] - self.ds.parameters["levelmin"]
 
@@ -224,6 +224,34 @@ class RAMSESDomainFile:
                 "Detected particle type %s in domain_id=%s", ph.ptype, domain_id
             )
             ph.read_header()
+
+    def serialize(self):
+        return {
+            "domain_id": self.domain_id,
+            "amr_fn": self.amr_fn,
+            "field_handlers": [fh.serialize() for fh in self.field_handlers],
+            "particle_handlers": [ph.serialize() for ph in self.particle_handlers],
+            "_max_level": self._max_level,
+            "_part_file_descriptor": self._part_file_descriptor,
+        }
+
+    @classmethod
+    def deserialize(cls, ds, data):
+        dom = cls.__new__(cls)
+        dom.ds = ds
+        for k, v in data.items():
+            setattr(dom, k, v)
+
+        # Deserialize field handlers
+        dom.field_handlers = [
+            FieldFileHandler.deserialize(dom, fh_data)
+            for fh_data in data["field_handlers"]
+        ]
+        dom.particle_handlers = [
+            ParticleFileHandler.deserialize(dom, ph_data)
+            for ph_data in data["particle_handlers"]
+        ]
+        return dom
 
     def __repr__(self):
         return "RAMSESDomainFile: %i" % self.domain_id
@@ -610,11 +638,18 @@ class RAMSESIndex(OctreeIndex):
 
     def _initialize_oct_handler(self):
         if self.ds._bbox is not None:
-            cpu_list = get_cpu_list(self.dataset, self.dataset._bbox)
+            cpu_list = sorted(get_cpu_list(self.dataset, self.dataset._bbox))
         else:
             cpu_list = range(self.dataset["ncpu"])
 
-        self.domains = [RAMSESDomainFile(self.dataset, i + 1) for i in cpu_list]
+        domains = {}
+        for sto, i in parallel_objects(cpu_list, method="sequential", storage=domains):
+            dom = RAMSESDomainFile(self.dataset, i + 1)
+            sto.result = dom.serialize()
+
+        self.domains = [
+            RAMSESDomainFile.deserialize(self.dataset, dom) for dom in domains.values()
+        ]
 
     @cached_property
     def max_level(self):

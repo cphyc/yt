@@ -40,7 +40,7 @@ class HandlerMixin:
         If you need more flexibility, rewrite this function to your
         need in the inherited class.
         """
-        self.ds = ds = domain.ds
+        ds = domain.ds
         self.domain = domain
         self.domain_id = domain.domain_id
         basename = os.path.abspath(ds.root_folder)
@@ -128,6 +128,31 @@ class HandlerMixin:
 
         return exists
 
+    @property
+    def ds(self):
+        return self.domain.ds
+
+    def serialize(self) -> dict:
+        data = {k: v for k, v in self.__dict__.items() if k not in ("domain",)}
+        data["class_name"] = self.__class__.__name__
+        return data
+
+    @classmethod
+    def deserialize(base_class, domain, data: dict):
+        class_name = data.pop("class_name")
+        for handler in base_class._handler_list:
+            if handler.__name__ == class_name:
+                cls = handler
+                break
+        else:
+            raise ValueError(f"Could not find handler {class_name}")
+        obj = cls.__new__(cls)
+        obj.__dict__.update(data)
+        obj.domain = domain
+        if domain.domain_id != obj.domain_id:
+            raise ValueError("Domain ID mismatch")
+        return obj
+
 
 class FieldFileHandler(abc.ABC, HandlerMixin):
     """
@@ -157,6 +182,8 @@ class FieldFileHandler(abc.ABC, HandlerMixin):
     field_types = (
         None  # Mapping from field to the type of the data (float, integer, ...)
     )
+
+    _handler_list: set["FieldFileHandler"] = FIELD_HANDLERS
 
     def __init_subclass__(cls, *args, **kwargs):
         """
