@@ -274,14 +274,19 @@ def parallel_map(self, func, parallelized_arg: int = 0):
     def single_proc_results(*args, **kwargs):
         if hasattr(self, "dont_wrap"):
             if func.__name__ in self.dont_wrap:
-                return func(self, *args, **kwargs)
+                return func(*args, **kwargs)
         if not parallel_capable or not self._distributed:
-            return func(self, *args, **kwargs)
+            return func(*args, **kwargs)
 
         strategy = ytcfg["yt", "internals", "parallel_strategy"]
 
+        if strategy == "none":
+            return func(*args, **kwargs)
+
         comm = _get_comm((self,))
+        comm.barrier()
         local_values = []
+
         for a in parallel_objects(list(args[parallelized_arg]), method="sequential"):
             new_args = (*args[:parallelized_arg], [a], *args[parallelized_arg + 1 :])
             ret = func(*new_args, **kwargs)
@@ -306,6 +311,10 @@ def parallel_map(self, func, parallelized_arg: int = 0):
                 return ret
             else:
                 return {k: np.empty(0, dtype=v.dtype) for k, v in ret.items()}
+        elif strategy == "no_gather":
+            return concat_local_values
+
+        comm.barrier()
 
     return single_proc_results
 

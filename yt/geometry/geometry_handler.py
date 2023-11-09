@@ -242,7 +242,6 @@ class Index(ParallelAnalysisInterface, abc.ABC):
         fields_to_return = parallel_map(
             self,
             self.io._read_fluid_selection,
-            strategy="gather_root",
         )(self._chunk_io(dobj), selector, fields_to_read, chunk_size)
         return fields_to_return, fields_to_generate
 
