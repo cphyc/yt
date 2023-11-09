@@ -54,6 +54,7 @@ ytcfg_defaults["yt"] = {
         "topcomm_parallel_rank": 0,
         "topcomm_parallel_size": 1,
         "command_line": False,
+        "parallel_strategy": "none",
     },
 }
 

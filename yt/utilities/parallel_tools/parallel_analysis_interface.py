@@ -3,8 +3,10 @@ import logging
 import os
 import sys
 import traceback
+from contextlib import contextmanager
 from functools import wraps
 from io import StringIO
+from typing import Literal, Union
 
 import numpy as np
 from more_itertools import always_iterable
@@ -261,7 +263,7 @@ def parallel_simple_proxy(func):
     return single_proc_results
 
 
-def parallel_map(self, func, parallelized_arg: int = 0, strategy: str = "gather_all"):
+def parallel_map(self, func, parallelized_arg: int = 0):
     """
     This is a decorator that distributes the arguments
     of a function to all processors and gathers the results
@@ -276,9 +278,11 @@ def parallel_map(self, func, parallelized_arg: int = 0, strategy: str = "gather_
         if not parallel_capable or not self._distributed:
             return func(self, *args, **kwargs)
 
+        strategy = ytcfg["yt", "internals", "parallel_strategy"]
+
         comm = _get_comm((self,))
         local_values = []
-        for a in parallel_objects(list(args[parallelized_arg])):
+        for a in parallel_objects(list(args[parallelized_arg]), method="sequential"):
             new_args = (*args[:parallelized_arg], [a], *args[parallelized_arg + 1 :])
             ret = func(*new_args, **kwargs)
             local_values.append(ret)
@@ -304,6 +308,16 @@ def parallel_map(self, func, parallelized_arg: int = 0, strategy: str = "gather_
                 return {k: np.empty(0, dtype=v.dtype) for k, v in ret.items()}
 
     return single_proc_results
+
+
+@contextmanager
+def parallel_context(strategy: str):
+    oldStrategy = ytcfg["yt", "internals", "parallel_strategy"]
+    ytcfg["yt", "internals", "parallel_strategy"] = strategy
+    try:
+        yield
+    finally:
+        ytcfg["yt", "internals", "parallel_strategy"] = oldStrategy
 
 
 class ParallelDummy(type):
@@ -511,7 +525,14 @@ class ResultsStorage:
     result_id = None
 
 
-def parallel_objects(objects, njobs=0, storage=None, barrier=True, dynamic=False):
+def parallel_objects(
+    objects,
+    njobs=0,
+    storage=None,
+    barrier=True,
+    dynamic=False,
+    method: Union[Literal["strided"], Literal["sequential"]] = "strided",
+):
     r"""This function dispatches components of an iterable to different
     processors.
 
@@ -548,6 +569,11 @@ def parallel_objects(objects, njobs=0, storage=None, barrier=True, dynamic=False
         This requires one dedicated processor; if this is enabled with a set of
         128 processors available, only 127 will be available to iterate over
         objects as one will be load balancing the rest.
+    method : str
+        This governs how the objects are distributed to processors.  The
+        default, "strided", will assign objects to processors in a round-robin
+        fashion. The other option, "sequential", will assign objects to
+        processors in a consecutive fashion.
 
 
     Examples
@@ -603,7 +629,20 @@ def parallel_objects(objects, njobs=0, storage=None, barrier=True, dynamic=False
     to_share = {}
     # If our objects object is slice-aware, like time series data objects are,
     # this will prevent intermediate objects from being created.
-    oiter = itertools.islice(enumerate(objects), my_new_id, None, njobs)
+    if method == "strided":
+        oiter = itertools.islice(enumerate(objects), my_new_id, None, njobs)
+    elif method == "sequential":
+        chunk_size = len(objects) // njobs
+        remainder = len(objects) % njobs
+
+        if my_new_id < remainder:
+            istart = my_new_id * (chunk_size + 1)
+            iend = istart + chunk_size + 1
+        else:
+            istart = (chunk_size + 1) * remainder + (my_new_id - remainder) * chunk_size
+            iend = istart + chunk_size
+
+        oiter = itertools.islice(enumerate(objects), istart, iend, 1)
     for result_id, obj in oiter:
         if storage is not None:
             rstore = ResultsStorage()
