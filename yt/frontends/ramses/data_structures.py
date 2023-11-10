@@ -647,9 +647,13 @@ class RAMSESIndex(OctreeIndex):
             dom = RAMSESDomainFile(self.dataset, i + 1)
             sto.result = dom.serialize()
 
-        self.domains = [
-            RAMSESDomainFile.deserialize(self.dataset, dom) for dom in domains.values()
-        ]
+        self.domains = sorted(
+            [
+                RAMSESDomainFile.deserialize(self.dataset, dom)
+                for dom in domains.values()
+            ],
+            key=lambda dom: dom.domain_id,
+        )
 
     @cached_property
     def max_level(self):
