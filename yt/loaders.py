@@ -9,8 +9,9 @@ import sys
 import time
 import types
 import warnings
+from collections.abc import Mapping
 from pathlib import Path
-from typing import TYPE_CHECKING, Any, Optional, Union, cast
+from typing import TYPE_CHECKING, Any, Union, cast
 from urllib.parse import urlsplit
 
 import numpy as np
@@ -52,9 +53,7 @@ if TYPE_CHECKING:
 
 # FUTURE: embedded warnings need to have their stacklevel decremented when this decorator is removed
 @future_positional_only({0: "fn"}, since="4.2")
-def load(
-    fn: Union[str, "os.PathLike[str]"], *args, hint: Optional[str] = None, **kwargs
-):
+def load(fn: Union[str, "os.PathLike[str]"], *args, hint: str | None = None, **kwargs):
     """
     Load a Dataset or DatasetSeries object.
     The data format is automatically discovered, and the exact return type is the
@@ -111,16 +110,13 @@ def load(
     if not fn.startswith("http"):
         fn = str(lookup_on_disk_data(fn))
 
-    if sys.version_info >= (3, 10):
-        external_frontends = entry_points(group="yt.frontends")
-    else:
-        external_frontends = entry_points().get("yt.frontends", [])
+    external_frontends = entry_points(group="yt.frontends")
 
     # Ensure that external frontends are loaded
     for entrypoint in external_frontends:
         entrypoint.load()
 
-    candidates: list[type["Dataset"]] = []
+    candidates: list[type[Dataset]] = []
     for cls in output_type_registry.values():
         if cls._is_valid(fn, *args, **kwargs):
             candidates.append(cls)
@@ -189,8 +185,8 @@ def load_simulation(fn, simulation_type, find_outputs=False):
 
 
 def _sanitize_axis_order_args(
-    geometry: Union[str, tuple[str, AxisOrder]], axis_order: Optional[AxisOrder]
-) -> tuple[str, Optional[AxisOrder]]:
+    geometry: str | tuple[str, AxisOrder], axis_order: AxisOrder | None
+) -> tuple[str, AxisOrder | None]:
     # this entire function should be removed at the end of its deprecation cycle
     geometry_str: str
     if isinstance(geometry, tuple):
@@ -222,7 +218,7 @@ def load_uniform_grid(
     unit_system="cgs",
     default_species_fields=None,
     *,
-    axis_order: Optional[AxisOrder] = None,
+    axis_order: AxisOrder | None = None,
     cell_widths=None,
     parameters=None,
     dataset_name: str = "UniformGridData",
@@ -338,9 +334,7 @@ def load_uniform_grid(
     if number_of_particles > 0:
         particle_types = set_particle_types(data)
         # Used much further below.
-        pdata: dict[Union[str, FieldKey], Any] = {
-            "number_of_particles": number_of_particles
-        }
+        pdata: dict[str | FieldKey, Any] = {"number_of_particles": number_of_particles}
         for key in list(data.keys()):
             if len(data[key].shape) == 1 or key[0] == "io":
                 field: FieldKey
@@ -472,7 +466,7 @@ def load_amr_grids(
     *,
     parameters=None,
     dataset_name: str = "AMRGridData",
-    axis_order: Optional[AxisOrder] = None,
+    axis_order: AxisOrder | None = None,
 ):
     r"""Load a set of grids of data into yt as a
     :class:`~yt.frontends.stream.data_structures.StreamHandler`.
@@ -694,7 +688,7 @@ def load_amr_grids(
 
 
 def load_particles(
-    data: dict[AnyFieldKey, np.ndarray],
+    data: Mapping[AnyFieldKey, np.ndarray | tuple[np.ndarray, str]],
     length_unit=None,
     bbox=None,
     sim_time=None,
@@ -708,7 +702,7 @@ def load_particles(
     data_source=None,
     default_species_fields=None,
     *,
-    axis_order: Optional[AxisOrder] = None,
+    axis_order: AxisOrder | None = None,
     parameters=None,
     dataset_name: str = "ParticleData",
 ):
@@ -798,7 +792,7 @@ def load_particles(
         le, re = data_source.get_bbox()
         le = le.to_value("code_length")
         re = re.to_value("code_length")
-        bbox = list(zip(le, re))
+        bbox = list(zip(le, re, strict=True))
     if bbox is None:
         bbox = np.array([[0.0, 1.0], [0.0, 1.0], [0.0, 1.0]], "float64")
     else:
@@ -833,7 +827,7 @@ def load_particles(
     field_units, data, _ = process_data(data)
     sfh = StreamDictFieldHandler()
 
-    pdata: dict[AnyFieldKey, np.ndarray] = {}
+    pdata: dict[AnyFieldKey, np.ndarray | tuple[np.ndarray, str]] = {}
     for key in data.keys():
         field: FieldKey
         if not isinstance(key, tuple):
@@ -902,7 +896,7 @@ def load_hexahedral_mesh(
     geometry="cartesian",
     unit_system="cgs",
     *,
-    axis_order: Optional[AxisOrder] = None,
+    axis_order: AxisOrder | None = None,
     parameters=None,
     dataset_name: str = "HexahedralMeshData",
 ):
@@ -1242,7 +1236,7 @@ def load_unstructured_mesh(
     geometry="cartesian",
     unit_system="cgs",
     *,
-    axis_order: Optional[AxisOrder] = None,
+    axis_order: AxisOrder | None = None,
     parameters=None,
     dataset_name: str = "UnstructuredMeshData",
 ):
@@ -1382,10 +1376,10 @@ def load_unstructured_mesh(
     node_data = list(always_iterable(node_data, base_type=dict)) or [{}] * num_meshes
 
     data = [{} for i in range(num_meshes)]  # type: ignore [var-annotated]
-    for elem_dict, data_dict in zip(elem_data, data):
+    for elem_dict, data_dict in zip(elem_data, data, strict=True):
         for field, values in elem_dict.items():
             data_dict[field] = values
-    for node_dict, data_dict in zip(node_data, data):
+    for node_dict, data_dict in zip(node_data, data, strict=True):
         for field, values in node_dict.items():
             data_dict[field] = values
 
@@ -1489,7 +1483,7 @@ def load_unstructured_mesh(
 # --- Loader for yt sample datasets ---
 @parallel_root_only_then_broadcast
 def _get_sample_data(
-    fn: Optional[str] = None, *, progressbar: bool = True, timeout=None, **kwargs
+    fn: str | None = None, *, progressbar: bool = True, timeout=None, **kwargs
 ):
     # this isolates all the filename management and downloading so that it
     # can be restricted to a single process if running in parallel. Returns
@@ -1630,7 +1624,7 @@ def _get_sample_data(
 
 
 def load_sample(
-    fn: Optional[str] = None, *, progressbar: bool = True, timeout=None, **kwargs
+    fn: str | None = None, *, progressbar: bool = True, timeout=None, **kwargs
 ):
     r"""
     Load sample data with yt.
@@ -1716,9 +1710,9 @@ def _mount_helper(
 
 # --- Loader for tar-based datasets ---
 def load_archive(
-    fn: Union[str, Path],
+    fn: str | Path,
     path: str,
-    ratarmount_kwa: Optional[dict] = None,
+    ratarmount_kwa: dict | None = None,
     mount_timeout: float = 1.0,
     *args,
     **kwargs,
@@ -1821,11 +1815,11 @@ def load_archive(
 
 def load_hdf5_file(
     fn: Union[str, "os.PathLike[str]"],
-    root_node: Optional[str] = "/",
-    fields: Optional[list[str]] = None,
-    bbox: Optional[np.ndarray] = None,
+    root_node: str | None = "/",
+    fields: list[str] | None = None,
+    bbox: np.ndarray | None = None,
     nchunks: int = 0,
-    dataset_arguments: Optional[dict] = None,
+    dataset_arguments: dict | None = None,
 ):
     """
     Create a (grid-based) yt dataset given the path to an hdf5 file.
@@ -1918,7 +1912,7 @@ def load_hdf5_file(
     grid_data = []
     psize = get_psize(np.array(shape), nchunks)
     left_edges, right_edges, shapes, _, _ = decompose_array(shape, psize, bbox)
-    for le, re, s in zip(left_edges, right_edges, shapes):
+    for le, re, s in zip(left_edges, right_edges, shapes, strict=True):
         data = {_: reader for _ in fields}
         data.update({"left_edge": le, "right_edge": re, "dimensions": s, "level": 0})
         grid_data.append(data)

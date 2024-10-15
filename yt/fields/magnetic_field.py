@@ -330,7 +330,7 @@ def setup_magnetic_field_aliases(registry, ds_ftype, ds_fields, ftype="gas"):
 
             return _mag_field
 
-        for ax, fd in zip(registry.ds.coordinates.axis_order, ds_fields):
+        for ax, fd in zip(registry.ds.coordinates.axis_order, ds_fields, strict=False):
             registry.add_field(
                 (ftype, f"magnetic_field_{ax}"),
                 sampling_type=sampling_type,

@@ -220,7 +220,7 @@ class ExodusIIDataset(Dataset):
             return
         with self._handle.open_ds() as ds:
             values = ds.variables["vals_glo_var"][:].transpose()
-            for name, value in zip(names, values):
+            for name, value in zip(names, values, strict=True):
                 self.parameters[name] = value
 
     def _load_info_records(self):

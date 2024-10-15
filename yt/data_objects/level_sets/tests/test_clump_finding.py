@@ -132,7 +132,7 @@ def test_clump_tree_save():
     it2 = np.argsort(mt2).astype("int64")
     assert_array_equal(mt1[it1], mt2[it2])
 
-    for i1, i2 in zip(it1, it2):
+    for i1, i2 in zip(it1, it2, strict=True):
         ct1 = t1[i1]
         ct2 = t2[i2]
         assert_array_equal(ct1["gas", "density"], ct2["grid", "density"])
@@ -191,5 +191,5 @@ def test_clump_field_parameters():
     leaf_clumps_1 = master_clump_1.leaves
     leaf_clumps_2 = master_clump_2.leaves
 
-    for c1, c2 in zip(leaf_clumps_1, leaf_clumps_2):
+    for c1, c2 in zip(leaf_clumps_1, leaf_clumps_2, strict=True):
         assert_array_equal(c1["gas", "density"], c2["gas", "density"])

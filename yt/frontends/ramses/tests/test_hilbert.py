@@ -20,7 +20,7 @@ def test_hilbert3d():
     ]
     outputs = [0, 1, 7, 6, 3, 2, 4, 5]
 
-    for i, o in zip(inputs, outputs):
+    for i, o in zip(inputs, outputs, strict=True):
         assert_equal(hilbert3d(i, 3).item(), o)
 
 
@@ -48,7 +48,7 @@ def test_get_cpu_list():
         + [ds.hilbert_indices[ds.parameters["ncpu"]][1]],
         dtype="float64",
     )
-    for i, o in zip(inputs, outputs):
+    for i, o in zip(inputs, outputs, strict=True):
         bbox = i
         ls = list(get_cpu_list_cuboid(ds, bbox, bound_keys=bound_keys))
         assert len(ls) > 0

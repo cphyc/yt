@@ -22,7 +22,7 @@ from yt.utilities.math_utils import (
 )
 
 from .field_functions import get_radius
-from .vector_operations import create_magnitude_field
+from .vector_operations import create_los_field, create_magnitude_field
 
 sph_whitelist_fields = (
     "density",
@@ -184,7 +184,7 @@ def particle_deposition_functions(ptype, coord_name, mass_name, registry):
         return _deposit_field
 
     for ax in "xyz":
-        for method, name in zip(("cic", "sum"), ("cic", "nn")):
+        for method, name in [("cic", "cic"), ("sum", "nn")]:
             function = _get_density_weighted_deposit_field(
                 f"particle_velocity_{ax}", "code_velocity", method
             )
@@ -197,7 +197,7 @@ def particle_deposition_functions(ptype, coord_name, mass_name, registry):
                 validators=[ValidateSpatial(0)],
             )
 
-    for method, name in zip(("cic", "sum"), ("cic", "nn")):
+    for method, name in [("cic", "cic"), ("sum", "nn")]:
         function = _get_density_weighted_deposit_field("age", "code_time", method)
         registry.add_field(
             ("deposit", ("%s_" + name + "_age") % (ptype)),
@@ -327,6 +327,14 @@ def standard_particle_fields(
         function=_particle_velocity_magnitude,
         take_log=False,
         units=unit_system["velocity"],
+    )
+
+    create_los_field(
+        registry,
+        "particle_velocity",
+        unit_system["velocity"],
+        ftype=ptype,
+        sampling_type="particle",
     )
 
     def _particle_specific_angular_momentum(field, data):

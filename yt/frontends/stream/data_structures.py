@@ -6,7 +6,6 @@ from collections import UserDict
 from functools import cached_property
 from itertools import chain, product, repeat
 from numbers import Number as numeric_type
-from typing import Optional
 
 import numpy as np
 from more_itertools import always_iterable
@@ -240,7 +239,7 @@ class StreamHierarchy(GridIndex):
             get_box_grids_level(
                 self.grid_left_edge[i, :],
                 self.grid_right_edge[i, :],
-                self.grid_levels[i] + 1,
+                self.grid_levels[i].item() + 1,
                 self.grid_left_edge,
                 self.grid_right_edge,
                 self.grid_levels,
@@ -333,7 +332,7 @@ class StreamDataset(Dataset):
         unit_system="cgs",
         default_species_fields=None,
         *,
-        axis_order: Optional[AxisOrder] = None,
+        axis_order: AxisOrder | None = None,
     ):
         self.fluid_types += ("stream",)
         self.geometry = Geometry(geometry)
@@ -422,7 +421,7 @@ class StreamDataset(Dataset):
             "magnetic_unit",
         )
         cgs_units = ("cm", "g", "s", "cm/s", "gauss")
-        for unit, attr, cgs_unit in zip(base_units, attrs, cgs_units):
+        for unit, attr, cgs_unit in zip(base_units, attrs, cgs_units, strict=True):
             if isinstance(unit, str):
                 if unit == "code_magnetic":
                     # If no magnetic unit was explicitly specified
@@ -549,7 +548,7 @@ class StreamParticlesDataset(StreamDataset):
         unit_system="cgs",
         default_species_fields=None,
         *,
-        axis_order: Optional[AxisOrder] = None,
+        axis_order: AxisOrder | None = None,
     ):
         super().__init__(
             stream_handler,

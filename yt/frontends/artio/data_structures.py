@@ -1,7 +1,6 @@
 import os
 import weakref
 from collections import defaultdict
-from typing import Optional
 
 import numpy as np
 
@@ -72,7 +71,7 @@ class ARTIOOctreeSubset(OctreeSubset):
         self.oct_handler.fill_sfc(
             levels, cell_inds, file_inds, domain_counts, field_indices, tr
         )
-        tr = dict(zip(fields, tr))
+        tr = dict(zip(fields, tr, strict=True))
         return tr
 
     def fill_particles(self, fields):
@@ -118,7 +117,7 @@ class ARTIORootMeshSubset(ARTIOOctreeSubset):
         ]
         tr = self.oct_handler.fill_sfc(selector, field_indices)
         self.data_size = tr[0].size
-        tr = dict(zip(fields, tr))
+        tr = dict(zip(fields, tr, strict=True))
         return tr
 
     def deposit(self, positions, fields=None, method=None, kernel_name="cubic"):
@@ -342,7 +341,7 @@ class ARTIOIndex(Index):
         self,
         icoords: np.ndarray,
         ires: np.ndarray,
-        axes: Optional[tuple[int, ...]] = None,
+        axes: tuple[int, ...] | None = None,
     ) -> tuple[np.ndarray, np.ndarray]:
         """
         Accepts icoords and ires and returns appropriate fcoords and fwidth.

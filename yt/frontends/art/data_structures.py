@@ -328,7 +328,9 @@ class ARTDataset(Dataset):
             mylog.info("Discovered %i species of particles", len(ls_nonzero))
             info_str = "Particle populations: " + "%9i " * len(ls_nonzero)
             mylog.info(info_str, *ls_nonzero)
-            self._particle_type_counts = dict(zip(self.particle_types_raw, ls_nonzero))
+            self._particle_type_counts = dict(
+                zip(self.particle_types_raw, ls_nonzero, strict=True)
+            )
             for k, v in particle_header_vals.items():
                 if k in self.parameters.keys():
                     if not self.parameters[k] == v:
@@ -396,7 +398,9 @@ class ARTParticleFile(ParticleFile):
         super().__init__(ds, io, filename, file_id, range=None)
         self.total_particles = {}
         for ptype, count in zip(
-            ds.particle_types_raw, ds.parameters["total_particles"]
+            ds.particle_types_raw,
+            ds.parameters["total_particles"],
+            strict=True,
         ):
             self.total_particles[ptype] = count
         with open(filename, "rb") as f:
@@ -754,7 +758,7 @@ class ARTDomainSubset(OctreeSubset):
             content, self.domain.level_child_offsets, self.domain.level_count
         )
         ns = (self.domain.ds.domain_dimensions.prod() // 8, 8)
-        for field, fi in zip(fields, field_idxs):
+        for field, fi in zip(fields, field_idxs, strict=True):
             source[field] = np.empty(ns, dtype="float64", order="C")
             dt = data[fi, :].reshape(self.domain.ds.domain_dimensions, order="F")
             for i in range(2):

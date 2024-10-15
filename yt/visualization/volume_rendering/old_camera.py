@@ -1,8 +1,8 @@
-import builtins
 from copy import deepcopy
 
 import numpy as np
 
+from yt._maintenance.ipython_compat import IS_IPYTHON
 from yt.config import ytcfg
 from yt.data_objects.api import ImageArray
 from yt.funcs import ensure_numpy_array, get_num_threads, get_pbar, is_sequence, mylog
@@ -410,7 +410,7 @@ class Camera(ParallelAnalysisInterface):
 
         # we flipped it in snapshot to get the orientation correct, so
         # flip the lines
-        for vec, color in zip(coord_vectors, colors):
+        for vec, color in zip(coord_vectors, colors, strict=True):
             dx = int(np.dot(vec, self.orienter.unit_vectors[0]))
             dy = int(np.dot(vec, self.orienter.unit_vectors[1]))
             px = np.array([px0, px0 + dx], dtype="int64")
@@ -896,7 +896,7 @@ class Camera(ParallelAnalysisInterface):
         >>> cam.show()
 
         """
-        if "__IPYTHON__" in dir(builtins):
+        if IS_IPYTHON:
             from IPython.core.displaypub import publish_display_data
 
             image = self.snapshot()[:, :, :3]
@@ -1921,7 +1921,7 @@ class MosaicCamera(Camera):
     def snapshot(self, fn=None, clip_ratio=None, double_check=False, num_threads=0):
         my_storage = {}
         offx, offy = np.meshgrid(range(self.nimx), range(self.nimy))
-        offxy = zip(offx.ravel(), offy.ravel())
+        offxy = zip(offx.ravel(), offy.ravel(), strict=True)
 
         for sto, xy in parallel_objects(
             offxy, self.procs_per_wg, storage=my_storage, dynamic=True
@@ -1957,7 +1957,7 @@ class MosaicCamera(Camera):
         final_image = 0
         if self.comm.rank == 0:
             offx, offy = np.meshgrid(range(self.nimx), range(self.nimy))
-            offxy = zip(offx.ravel(), offy.ravel())
+            offxy = zip(offx.ravel(), offy.ravel(), strict=True)
             nx, ny = self.resolution
             final_image = np.empty(
                 (nx * self.nimx, ny * self.nimy, 4), dtype="float64", order="C"
@@ -2439,6 +2439,8 @@ class StereoSphericalCamera(Camera):
 data_object_registry["stereospherical_camera"] = StereoSphericalCamera
 
 
+# replaced in volume_rendering API by the function of the same name in
+# yt/visualization/volume_rendering/off_axis_projection
 def off_axis_projection(
     ds,
     center,

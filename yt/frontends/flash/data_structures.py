@@ -1,5 +1,6 @@
 import os
 import weakref
+from pathlib import Path
 
 import numpy as np
 
@@ -185,17 +186,27 @@ class FLASHDataset(Dataset):
 
         self.particle_filename = particle_filename
 
+        filepath = Path(filename)
+
         if self.particle_filename is None:
             # try to guess the particle filename
-            try:
-                self._particle_handle = HDF5FileHandler(
-                    filename.replace("plt_cnt", "part")
-                )
-                self.particle_filename = filename.replace("plt_cnt", "part")
-                mylog.info(
-                    "Particle file found: %s", self.particle_filename.split("/")[-1]
-                )
-            except OSError:
+            if "hdf5_plt_cnt" in filepath.name:
+                # We have a plotfile, look for the particle file
+                try:
+                    pfn = str(
+                        filepath.parent.resolve()
+                        / filepath.name.replace("plt_cnt", "part")
+                    )
+                    self._particle_handle = HDF5FileHandler(pfn)
+                    self.particle_filename = pfn
+                    mylog.info(
+                        "Particle file found: %s",
+                        os.path.basename(self.particle_filename),
+                    )
+                except OSError:
+                    self._particle_handle = self._handle
+            elif "hdf5_chk" in filepath.name:
+                # This is a checkpoint file, should have the particles in it
                 self._particle_handle = self._handle
         else:
             # particle_filename is specified by user
@@ -203,9 +214,10 @@ class FLASHDataset(Dataset):
 
         # Check if the particle file has the same time
         if self._particle_handle != self._handle:
-            part_time = self._particle_handle.handle.get("real scalars")[0][1]
-            plot_time = self._handle.handle.get("real scalars")[0][1]
-            if not np.isclose(part_time, plot_time):
+            plot_time = self._handle.handle.get("real scalars")
+            if (part_time := self._particle_handle.handle.get("real scalars")) is None:
+                raise RuntimeError("FLASH 2.x particle files are not supported!")
+            if not np.isclose(part_time[0][1], plot_time[0][1]):
                 self._particle_handle = self._handle
                 mylog.warning(
                     "%s and %s are not at the same time. "
@@ -274,7 +286,9 @@ class FLASHDataset(Dataset):
         if nn not in self._handle:
             raise KeyError(nn)
         for tpname, pval in zip(
-            self._handle[nn][:, "name"], self._handle[nn][:, "value"]
+            self._handle[nn][:, "name"],
+            self._handle[nn][:, "value"],
+            strict=True,
         ):
             if tpname.decode("ascii", "ignore").strip() == pname:
                 if hasattr(pval, "decode"):
@@ -306,7 +320,9 @@ class FLASHDataset(Dataset):
                 if hn not in self._handle:
                     continue
                 for varname, val in zip(
-                    self._handle[hn][:, "name"], self._handle[hn][:, "value"]
+                    self._handle[hn][:, "name"],
+                    self._handle[hn][:, "value"],
+                    strict=True,
                 ):
                     vn = varname.strip()
                     if hn.startswith("string"):
@@ -333,7 +349,9 @@ class FLASHDataset(Dataset):
                     )
                 else:
                     zipover = zip(
-                        self._handle[hn][:, "name"], self._handle[hn][:, "value"]
+                        self._handle[hn][:, "name"],
+                        self._handle[hn][:, "value"],
+                        strict=True,
                     )
                 for varname, val in zipover:
                     vn = varname.strip()

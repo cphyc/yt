@@ -122,7 +122,9 @@ class TipsyDataset(SPHDataset):
         hvals = {
             a: c
             for (a, b), c in zip(
-                self._header_spec, struct.unpack(hh, f.read(struct.calcsize(hh)))
+                self._header_spec,
+                struct.unpack(hh, f.read(struct.calcsize(hh))),
+                strict=True,
             )
         }
         self.parameters.update(hvals)

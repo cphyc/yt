@@ -342,7 +342,7 @@ class EnzoHierarchy(GridIndex):
         mylog.info("Finished rebuilding")
 
     def _populate_grid_objects(self):
-        for g, f in zip(self.grids, self.filenames):
+        for g, f in zip(self.grids, self.filenames, strict=True):
             g._prepare_grid()
             g._setup_dx()
             g.set_filename(f[0])

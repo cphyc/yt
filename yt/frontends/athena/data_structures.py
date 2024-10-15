@@ -359,7 +359,9 @@ class AthenaHierarchy(GridIndex):
                 gre_orig = self.ds.arr(
                     np.round(gle_orig + dx * gdims[i], decimals=12), "code_length"
                 )
-                bbox = np.array([[le, re] for le, re in zip(gle_orig, gre_orig)])
+                bbox = np.array(
+                    [[le, re] for le, re in zip(gle_orig, gre_orig, strict=True)]
+                )
                 psize = get_psize(self.ds.domain_dimensions, self.ds.nprocs)
                 gle, gre, shapes, slices, _ = decompose_array(gdims[i], psize, bbox)
                 gle_all += gle
@@ -432,7 +434,7 @@ class AthenaHierarchy(GridIndex):
             get_box_grids_level(
                 self.grid_left_edge[i, :],
                 self.grid_right_edge[i, :],
-                self.grid_levels[i] + 1,
+                self.grid_levels[i].item() + 1,
                 self.grid_left_edge,
                 self.grid_right_edge,
                 self.grid_levels,

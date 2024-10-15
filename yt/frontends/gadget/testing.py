@@ -72,7 +72,7 @@ def fake_gadget_binary(
                 header["HubbleParam"] = 1
             write_block(fp, header, endian, fmt, "HEAD")
 
-        npart = dict(zip(ptype_spec, npart))
+        npart = dict(zip(ptype_spec, npart, strict=True))
         for fs in field_spec:
             # Parse field name and particle type
             if isinstance(fs, str):

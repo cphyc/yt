@@ -146,7 +146,7 @@ class SavedDataset(Dataset):
         )
         cgs_units = ("cm", "g", "s", "cm/s", "gauss")
         base_units = np.ones(len(attrs))
-        for unit, attr, cgs_unit in zip(base_units, attrs, cgs_units):
+        for unit, attr, cgs_unit in zip(base_units, attrs, cgs_units, strict=True):
             if attr in self.parameters and isinstance(
                 self.parameters[attr], YTQuantity
             ):

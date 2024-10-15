@@ -101,18 +101,34 @@ def create_relative_field(
         )
 
 
-def create_los_field(registry, basename, field_units, ftype="gas", slice_info=None):
+def create_los_field(
+    registry,
+    basename,
+    field_units,
+    ftype="gas",
+    slice_info=None,
+    *,
+    sampling_type="local",
+):
     axis_order = registry.ds.coordinates.axis_order
 
+    # Here we need to check if we are a particle field, so that we can
+    # correctly identify the "bulk" field parameter corresponding to
+    # this vector field.
+    if sampling_type == "particle":
+        basenm = basename.removeprefix("particle_")
+    else:
+        basenm = basename
+
     validators = [
-        ValidateParameter(f"bulk_{basename}"),
+        ValidateParameter(f"bulk_{basenm}"),
         ValidateParameter("axis", {"axis": [0, 1, 2]}),
     ]
 
     field_comps = [(ftype, f"{basename}_{ax}") for ax in axis_order]
 
     def _los_field(field, data):
-        if data.has_field_parameter(f"bulk_{basename}"):
+        if data.has_field_parameter(f"bulk_{basenm}"):
             fns = [(fc[0], f"relative_{fc[1]}") for fc in field_comps]
         else:
             fns = field_comps
@@ -129,7 +145,7 @@ def create_los_field(registry, basename, field_units, ftype="gas", slice_info=No
 
     registry.add_field(
         (ftype, f"{basename}_los"),
-        sampling_type="local",
+        sampling_type=sampling_type,
         function=_los_field,
         units=field_units,
         validators=validators,
@@ -362,7 +378,7 @@ def create_vector_fields(
             ds = div_fac * just_one(data["index", "dz"])
             f += data[zn[0], f"relative_{zn[1]}"][1:-1, 1:-1, sl_right] / ds
             f -= data[zn[0], f"relative_{zn[1]}"][1:-1, 1:-1, sl_left] / ds
-            new_field = data.ds.arr(np.zeros(data[xn].shape, dtype=np.float64), f.units)
+            new_field = data.ds.arr(np.zeros(data[xn].shape, dtype="f8"), str(f.units))
             new_field[1:-1, 1:-1, 1:-1] = f
             return new_field
 
@@ -676,7 +692,7 @@ def create_averaged_field(
         )
         i_i, j_i, k_i = np.mgrid[0:3, 0:3, 0:3]
 
-        for i, j, k in zip(i_i.ravel(), j_i.ravel(), k_i.ravel()):
+        for i, j, k in zip(i_i.ravel(), j_i.ravel(), k_i.ravel(), strict=True):
             sl = (
                 slice(i, nx - (2 - i)),
                 slice(j, ny - (2 - j)),

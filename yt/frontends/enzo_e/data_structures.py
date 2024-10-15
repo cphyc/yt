@@ -408,7 +408,11 @@ class EnzoEDataset(Dataset):
         self.parameters["current_cycle"] = ablock.attrs["cycle"][0]
         gsi = ablock.attrs["enzo_GridStartIndex"]
         gei = ablock.attrs["enzo_GridEndIndex"]
-        self.ghost_zones = gsi[0]
+        assert len(gsi) == len(gei) == 3  # sanity check
+        # Enzo-E technically allows each axis to have different ghost zone
+        # depths (this feature is not really used in practice)
+        self.ghost_zones = gsi
+        assert (self.ghost_zones[self.dimensionality :] == 0).all()  # sanity check
         self.root_block_dimensions = root_blocks
         self.active_grid_dimensions = gei - gsi + 1
         self.grid_dimensions = ablock.attrs["enzo_GridDimension"]
@@ -475,7 +479,7 @@ class EnzoEDataset(Dataset):
             setdefaultattr(self, "velocity_unit", self.quan(k["uvel"], "cm/s"))
         else:
             p = self.parameters
-            for d, u in zip(("length", "time"), ("cm", "s")):
+            for d, u in [("length", "cm"), ("time", "s")]:
                 val = nested_dict_get(p, ("Units", d), default=1)
                 setdefaultattr(self, f"{d}_unit", self.quan(val, u))
             mass = nested_dict_get(p, ("Units", "mass"))

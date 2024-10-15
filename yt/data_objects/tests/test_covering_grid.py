@@ -354,7 +354,7 @@ def test_arbitrary_grid_edge():
         [1.0, 1.0, 1.0] * kpc,
     ]
 
-    for le, re, le_ans, re_ans in zip(ledge, redge, ledge_ans, redge_ans):
+    for le, re, le_ans, re_ans in zip(ledge, redge, ledge_ans, redge_ans, strict=True):
         ag = ds.arbitrary_grid(left_edge=le, right_edge=re, dims=dims)
         assert np.array_equal(ag.left_edge, le_ans)
         assert np.array_equal(ag.right_edge, re_ans)

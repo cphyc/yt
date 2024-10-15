@@ -1175,7 +1175,7 @@ class SDFIndex:
 
     def iter_slice_data(self, slice_dim, slice_index, fields):
         mask, offsets, lengths = self.get_slice_chunks(slice_dim, slice_index)
-        for off, l in zip(offsets, lengths):
+        for off, l in zip(offsets, lengths, strict=True):
             data = {}
             chunk = slice(off, off + l)
             for field in fields:

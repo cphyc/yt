@@ -509,7 +509,7 @@ class IOHandlerGadgetBinary(IOHandlerSPH):
             pos = offset
         fs = self._field_size
         offsets = {}
-        pcount = dict(zip(self._ptypes, pcount))
+        pcount = dict(zip(self._ptypes, pcount, strict=True))
 
         for field in self._fields:
             if field == "ParticleIDs" and self.ds.long_ids:

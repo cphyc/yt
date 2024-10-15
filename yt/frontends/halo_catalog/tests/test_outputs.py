@@ -38,7 +38,7 @@ class HaloCatalogTest(TempDirTest):
         units = ["g"] + ["cm"] * 3
         data = {
             field: YTArray(rs.random_sample(n_halos), unit)
-            for field, unit in zip(fields, units)
+            for field, unit in zip(fields, units, strict=True)
         }
 
         fn = fake_halo_catalog(data)
@@ -61,7 +61,7 @@ class HaloCatalogTest(TempDirTest):
         units = ["g"] + ["cm"] * 3
         data = {
             field: YTArray(rs.random_sample(n_halos), unit)
-            for field, unit in zip(fields, units)
+            for field, unit in zip(fields, units, strict=True)
         }
 
         data["particle_position_x"][0] = 1.0

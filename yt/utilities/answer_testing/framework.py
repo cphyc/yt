@@ -15,7 +15,6 @@ import time
 import warnings
 import zlib
 from collections import defaultdict
-from typing import Optional
 
 import numpy as np
 from matplotlib import image as mpimg
@@ -769,16 +768,24 @@ class ParentageRelationshipsTest(AnswerTestingTest):
         return result
 
     def compare(self, new_result, old_result):
-        for newp, oldp in zip(new_result["parents"], old_result["parents"]):
+        for newp, oldp in zip(
+            new_result["parents"],
+            old_result["parents"],
+            strict=True,
+        ):
             assert newp == oldp
-        for newc, oldc in zip(new_result["children"], old_result["children"]):
+        for newc, oldc in zip(
+            new_result["children"],
+            old_result["children"],
+            strict=True,
+        ):
             assert newc == oldc
 
 
 def dump_images(new_result, old_result, decimals=10):
-    tmpfd, old_image = tempfile.mkstemp(suffix=".png")
+    tmpfd, old_image = tempfile.mkstemp(prefix="baseline_", suffix=".png")
     os.close(tmpfd)
-    tmpfd, new_image = tempfile.mkstemp(suffix=".png")
+    tmpfd, new_image = tempfile.mkstemp(prefix="thisPR_", suffix=".png")
     os.close(tmpfd)
     image_writer.write_projection(new_result, new_image)
     image_writer.write_projection(old_result, old_image)
@@ -840,7 +847,10 @@ def compare_image_lists(new_result, old_result, decimals):
                 line.strip() for line in results.split("\n") if line.endswith(".png")
             ]
             for fn, img, padded in zip(
-                tempfiles, (expected, actual), (expected_p, actual_p)
+                tempfiles,
+                (expected, actual),
+                (expected_p, actual_p),
+                strict=True,
             ):
                 # padded images are convenient for comparison
                 # but what we really want to store and upload
@@ -872,12 +882,12 @@ class PlotWindowAttributeTest(AnswerTestingTest):
         ds_fn: str,
         plot_field: str,
         plot_axis: str,
-        attr_name: Optional[str] = None,
-        attr_args: Optional[tuple] = None,
-        decimals: Optional[int] = 12,
-        plot_type: Optional[str] = "SlicePlot",
-        callback_id: Optional[str] = "",
-        callback_runners: Optional[tuple] = None,
+        attr_name: str | None = None,
+        attr_args: tuple | None = None,
+        decimals: int | None = 12,
+        plot_type: str | None = "SlicePlot",
+        callback_id: str | None = "",
+        callback_runners: tuple | None = None,
     ):
         super().__init__(ds_fn)
         self.plot_type = plot_type
