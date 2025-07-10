@@ -33,24 +33,44 @@ class OctreeIndex(Index):
             # Get the position of the particles
             pos = data[ptype, "particle_position"]
             Npart = pos.shape[0]
-            ret = np.zeros(Npart, dtype="float64")
-            tmp = np.zeros(Npart, dtype="float64")
+            ret = np.full(Npart, np.nan, dtype="float64")
+            tmp = np.empty(Npart, dtype="float64")
 
             if isinstance(data, FieldDetector):
                 return ret
 
-            remaining = np.ones(Npart, dtype=bool)
             Nremaining = Npart
 
             Nobjs = len(data._current_chunk.objs)
             Nbits = int(np.ceil(np.log2(Nobjs)))
 
             # Sort objs by decreasing number of octs
+            all_objs = list(data._current_chunk.objs)
             enumerated_objs = sorted(
-                enumerate(data._current_chunk.objs),
+                enumerate(all_objs),
                 key=lambda arg: arg[1].oct_handler.nocts,
                 reverse=True,
             )
+            N = 0
+            # First pass: only deposit particles within the chunk
+            for i, obj in enumerate(all_objs):
+                pos_here = obj[ptype, "particle_position"]
+                Nhere = pos_here.shape[0]
+                icell = (
+                    obj["index", "ones"].T.reshape(-1).astype(np.int64).cumsum().value
+                    - 1
+                )
+                mesh_data = ((icell << Nbits) + i).astype(np.float64)
+                # Access the mesh data and attach them to their particles
+                tmp[:Nhere] = obj.mesh_sampling_particle_field(pos_here, mesh_data)
+
+                ret[N : N + Nhere] = tmp[:Nhere]
+                N += Nhere
+
+            remaining = np.isnan(ret)
+            Nremaining = remaining.sum()
+
+            # Second pass: deposit remaining particles
             for i, obj in enumerated_objs:
                 if Nremaining == 0:
                     break
