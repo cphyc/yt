@@ -1084,7 +1084,9 @@ def fake_octree_ds(
         quantities["gas", "density"] = prng.random_sample((particles, 1))
         quantities["gas", "velocity_x"] = prng.random_sample((particles, 1))
         quantities["gas", "velocity_y"] = prng.random_sample((particles, 1))
-        quantities["gas", "velocity_z"] = lambda: prng.random_sample((particles, 1))
+        quantities["gas", "velocity_z"] = lambda _grid, _field: prng.random_sample(
+            (particles, 1)
+        )
 
     ds = load_octree(
         octree_mask=octree_mask,

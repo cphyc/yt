@@ -260,7 +260,7 @@ class IOHandlerStreamOctree(BaseIOHandler):
                     ][field]
 
                     if callable(field_vals[field]):
-                        field_vals[field] = field_vals[field]()
+                        field_vals[field] = field_vals[field](subset, field)
                 subset.fill(field_vals, rv, selector, ind)
         return rv
 

@@ -1121,11 +1121,17 @@ def load_octree(
     >>> import numpy as np
     >>> oct_mask = np.zeros(33) # 5 refined values gives 7 * 4 + 5 octs to mask
     ... oct_mask[[0,  5,  7, 16]] = 8
+    >>> num_zones = 1
     >>> octree_mask = np.array(oct_mask, dtype=np.uint8)
     >>> quantities = {}
     >>> quantities["gas", "density"] = np.random.random((29, 1)) # num of false's
-    >>> # Quantities can also contain parameter-less callbacks
-    >>> quantities["gas", "temperature"] = lambda: np.random.random((29, 1)) * 1e4
+    >>> # Quantities can also contain functions
+    >>> def gas_temperature(subset, field):
+    ...    # has shape (num_zones, num_zones, num_zones, num_octs)
+    ...    x = subset["index", "x"]
+    ...    # return with shape (num_octs, num_zones**3)
+    ...    return x.T.reshape(-1, num_zones**3).value * 1e4
+    >>> quantities["gas", "temperature"] = gas_temperature
     >>> bbox = np.array([[-10.0, 10.0], [-10.0, 10.0], [-10.0, 10.0]])
 
     >>> ds = load_octree(
