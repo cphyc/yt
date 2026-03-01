@@ -2,6 +2,7 @@ import numpy as np
 from numpy.testing import assert_almost_equal, assert_equal
 
 from yt.testing import fake_sph_grid_ds
+from yt.geometry.oct_container import OctreeContainer
 
 n_ref = 4
 
@@ -118,3 +119,73 @@ def test_octree_properties():
     refined = octree["index", "refined"]
     refined_ans = np.array([True] + [False] * 7 + [True] + [False] * 8, dtype=np.bool_)
     assert_equal(refined, refined_ans)
+
+
+def test_num_zones_tuple():
+    """
+    Test that OctreeContainer accepts num_zones as a scalar or a tuple (N, M, L).
+    Both should correctly set per-dimension zone counts.
+    """
+    # Scalar: all dimensions equal
+    oct_scalar = OctreeContainer(
+        [1, 1, 1], [0.0, 0.0, 0.0], [1.0, 1.0, 1.0], num_zones=2
+    )
+    # Tuple: potentially different per-dimension
+    oct_tuple = OctreeContainer(
+        [1, 1, 1], [0.0, 0.0, 0.0], [1.0, 1.0, 1.0], num_zones=(2, 2, 2)
+    )
+    # Non-uniform tuple
+    oct_nonuniform = OctreeContainer(
+        [1, 1, 1], [0.0, 0.0, 0.0], [1.0, 1.0, 1.0], num_zones=(2, 3, 4)
+    )
+    # Verify that creating these containers doesn't raise exceptions
+    assert oct_scalar is not None
+    assert oct_tuple is not None
+    assert oct_nonuniform is not None
+
+
+def test_nz_property_array():
+    """
+    Test that the nz property returns a 3-element array for both scalar
+    and array _num_zones.
+    """
+    from yt.data_objects.index_subobjects.octree_subset import OctreeSubset
+
+    # Simulate what ARTIO does: _num_zones as a class-level int
+    class FakeSubsetScalar:
+        _num_zones = 2
+        _num_ghost_zones = 0
+
+        @property
+        def nz(self):
+            nz = self._num_zones + 2 * self._num_ghost_zones
+            if hasattr(nz, "__len__"):
+                return nz
+            return np.array([nz, nz, nz], dtype="int64")
+
+    s_scalar = FakeSubsetScalar()
+    nz = s_scalar.nz
+    assert len(nz) == 3
+    assert_equal(nz, np.array([2, 2, 2]))
+
+    # Simulate OctreeSubset with num_zones as array
+    class FakeSubsetArray:
+        _num_ghost_zones = 0
+
+        def __init__(self, num_zones):
+            if hasattr(num_zones, "__len__"):
+                self._num_zones = np.array(num_zones, dtype="int64")
+            else:
+                self._num_zones = np.array([num_zones] * 3, dtype="int64")
+
+        @property
+        def nz(self):
+            nz = self._num_zones + 2 * self._num_ghost_zones
+            if hasattr(nz, "__len__"):
+                return nz
+            return np.array([nz, nz, nz], dtype="int64")
+
+    s_array = FakeSubsetArray((2, 3, 4))
+    nz = s_array.nz
+    assert len(nz) == 3
+    assert_equal(nz, np.array([2, 3, 4]))

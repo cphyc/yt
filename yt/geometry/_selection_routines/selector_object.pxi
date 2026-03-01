@@ -159,7 +159,7 @@ cdef class SelectorObject:
                             visitor.pos[1] = (visitor.pos[1] >> 1)
                             visitor.pos[2] = (visitor.pos[2] >> 1)
                             visitor.level -= 1
-                        elif this_level == 1 and visitor.nz > 1:
+                        elif this_level == 1 and (visitor.nz[0] > 1 or visitor.nz[1] > 1 or visitor.nz[2] > 1):
                             visitor.global_index += increment
                             increment = 0
                             self.visit_oct_cells(root, ch, spos, sdds,
@@ -178,10 +178,10 @@ cdef class SelectorObject:
     cdef void visit_oct_cells(self, Oct *root, Oct *ch,
                               np.float64_t spos[3], np.float64_t sdds[3],
                               OctVisitor visitor, int i, int j, int k):
-        # We can short-circuit the whole process if data.nz == 2.
+        # We can short-circuit the whole process if data.nz == 2 in all dims.
         # This saves us some funny-business.
         cdef int selected
-        if visitor.nz == 2:
+        if visitor.nz[0] == 2 and visitor.nz[1] == 2 and visitor.nz[2] == 2:
             selected = self.select_cell(spos, sdds)
             if ch != NULL:
                 selected *= self.overlap_cells
@@ -199,22 +199,25 @@ cdef class SelectorObject:
         cdef np.float64_t dds[3]
         cdef np.float64_t pos[3]
         cdef int ci, cj, ck
-        cdef int nr = (visitor.nz >> 1)
+        cdef int nr[3]
+        nr[0] = visitor.nz[0] >> 1
+        nr[1] = visitor.nz[1] >> 1
+        nr[2] = visitor.nz[2] >> 1
         for ci in range(3):
-            dds[ci] = sdds[ci] / nr
+            dds[ci] = sdds[ci] / nr[ci]
         # Boot strap at the first index.
         pos[0] = (spos[0] - sdds[0]/2.0) + dds[0] * 0.5
-        for ci in range(nr):
+        for ci in range(nr[0]):
             pos[1] = (spos[1] - sdds[1]/2.0) + dds[1] * 0.5
-            for cj in range(nr):
+            for cj in range(nr[1]):
                 pos[2] = (spos[2] - sdds[2]/2.0) + dds[2] * 0.5
-                for ck in range(nr):
+                for ck in range(nr[2]):
                     selected = self.select_cell(pos, dds)
                     if ch != NULL:
                         selected *= self.overlap_cells
-                    visitor.ind[0] = ci + i * nr
-                    visitor.ind[1] = cj + j * nr
-                    visitor.ind[2] = ck + k * nr
+                    visitor.ind[0] = ci + i * nr[0]
+                    visitor.ind[1] = cj + j * nr[1]
+                    visitor.ind[2] = ck + k * nr[2]
                     visitor.visit(root, selected)
                     pos[2] += dds[2]
                 pos[1] += dds[1]
