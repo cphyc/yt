@@ -37,9 +37,6 @@ cdef class SelectorObject:
                         int level,
                         OctVisitor visitor,
                         int visit_covered = ?)
-    cdef void visit_oct_cells(self, Oct *root, Oct *ch,
-                              np.float64_t spos[3], np.float64_t sdds[3],
-                              OctVisitor visitor, int i, int j, int k)
     cdef int select_grid(self, np.float64_t left_edge[3],
                                np.float64_t right_edge[3],
                                np.int32_t level, Oct *o = ?) noexcept nogil
