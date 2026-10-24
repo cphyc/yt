@@ -11,10 +11,10 @@ import numpy as np
 
 cimport numpy as np
 cimport cython
-from libc.math cimport ceil, floor, log2, sqrt
+from libc.math cimport INFINITY, ceil, floor, log2, sqrt
 from libc.stdlib cimport free, malloc
 
-from yt.utilities.lib.fp_utils cimport iclip, imin, imax, fclip, fmin, fmax
+from yt.utilities.lib.fp_utils cimport iclip, imin, fclip, fmin, fmax
 from cython.parallel import prange, parallel
 
 @cython.wraparound(False)
@@ -77,17 +77,21 @@ cdef void _add_cell_to_image_offaxis(
     ly = y - cell_max_half_width
     ry = y + cell_max_half_width
 
-    # Compute the range of pixels that the cell may overlap
-    jmin = imax(<int>floor(lx * Nx), 0)
-    jmax = imax(<int>ceil(rx * Nx), Nx - 1)
+    if rx <= 0 or lx >= 1 or ry <= 0 or ly >= 1:
+        return
 
-    kmin = imin(<int>floor(ly * Ny), 0)
-    kmax = imax(<int>ceil(ry * Ny), Ny - 1)
+    # Compute the range of pixels that the cell may overlap
+    jmin = <int>floor(lx * Nx)
+    jmax = <int>ceil(rx * Nx)
+
+    kmin = <int>floor(ly * Ny)
+    kmax = <int>ceil(ry * Ny)
 
     # If the cell is fully within one pixel
-    if (jmax == jmin + 1) and (kmax == kmin + 1):
-        buffer[ij2idx(jmin, kmin, Nx)]        += q * dx3
-        buffer_weight[ij2idx(jmin, kmin, Nx)] += w * dx3
+    if (jmin >= 0 and kmin >= 0 and
+        jmax == jmin + 1 and kmax == kmin + 1):
+        buffer[ij2idx(jmin, kmin, Ny)]        += q * dx3
+        buffer_weight[ij2idx(jmin, kmin, Ny)] += w * dx3
         return
 
     # Our 'stamp' has multiple resolutions, select the one
@@ -139,25 +143,25 @@ cdef void _add_cell_to_image_offaxis(
 
             if jj1 >= 0 and kk1 >= 0:
                 tmp = dvx * dvy
-                itmp = ij2idx(jj1, kk1, Nx)
+                itmp = ij2idx(jj1, kk1, Ny)
                 buffer[itmp]        += sq * tmp
                 buffer_weight[itmp] += sw * tmp
 
             if jj1 >= 0 and kk2 < Ny:
                 tmp = dvx * (1 - dvy)
-                itmp = ij2idx(jj1, kk2, Nx)
+                itmp = ij2idx(jj1, kk2, Ny)
                 buffer[itmp]        += sq * tmp
                 buffer_weight[itmp] += sw * tmp
 
             if jj2 < Nx and kk1 >= 0:
                 tmp = (1 - dvx) * dvy
-                itmp = ij2idx(jj2, kk1, Nx)
+                itmp = ij2idx(jj2, kk1, Ny)
                 buffer[itmp]        += sq * tmp
                 buffer_weight[itmp] += sw * tmp
 
             if jj2 < Nx and kk2 < Ny:
                 tmp = (1 - dvx) * (1 - dvy)
-                itmp = ij2idx(jj2, kk2, Nx)
+                itmp = ij2idx(jj2, kk2, Ny)
                 buffer[itmp]        += sq * tmp
                 buffer_weight[itmp] += sw * tmp
 
@@ -198,9 +202,12 @@ def add_cells_to_image_offaxis(
     Nsy = max(Npix_min, int(ceil(2 * dx_max * sqrt(3) * Ny)))
     cdef int max_depth = int(ceil(log2(max(Nsx, Nsy))))
     cdef int depth
+    Nsx = imin(Nsx, 1 << (max_depth - 1))
+    Nsy = imin(Nsy, 1 << (max_depth - 1))
 
     cdef np.ndarray[np.float64_t, ndim=3] stamp_arr = np.zeros((max_depth, Nsx, Nsy), dtype=float)
     cdef np.ndarray[np.uint8_t, ndim=3] stamp_mask_arr = np.zeros((max_depth, Nsx, Nsy), dtype=np.uint8)
+    cdef np.ndarray[np.float64_t, ndim=2] stamp_slice
     cdef np.float64_t[:, :, ::1] stamp = stamp_arr
     cdef np.uint8_t[:, :, ::1] stamp_mask = stamp_mask_arr
 
@@ -209,18 +216,19 @@ def add_cells_to_image_offaxis(
         if depth == 0:
             stamp[0, 0, 0] = 1
             continue
+        stamp_slice = stamp_arr[depth, :imin(1 << depth, Nsx), :imin(1 << depth, Nsy)]
         direct_integrate_cube(
             o,
             a,
             b,
             c,
-            stamp_arr[depth, :, :],
+            stamp_slice,
             stamp_mask_arr[depth, :, :],
             imin(1 << depth, Nsx),
             imin(1 << depth, Nsy),
         )
 
-        stamp_arr[depth] /= np.sum(stamp[depth])
+        stamp_slice /= np.sum(stamp_slice)
 
     # Iterate over all cells, applying the stamp
     cdef np.float64_t x, y, dx
@@ -280,8 +288,8 @@ def add_cells_to_image_offaxis(
         with gil:
             for j in range(Nx):
                 for k in range(Ny):
-                    buffer[j, k] += lbuffer[ij2idx(j, k, Nx)]
-                    buffer_weight[j, k] += lbuffer_weight[ij2idx(j, k, Nx)]
+                    buffer[j, k] += lbuffer[ij2idx(j, k, Ny)]
+                    buffer_weight[j, k] += lbuffer_weight[ij2idx(j, k, Ny)]
         # Free memory
         free(lbuffer)
         free(lbuffer_weight)
@@ -357,8 +365,8 @@ cdef int direct_integrate_cube(
         ObackA[0] = X[0] - Oback[0]
 
         for j in range(Ny):
-            zmin = np.inf
-            zmax = -np.inf
+            zmin = INFINITY
+            zmax = -INFINITY
             Nhit = 0
             X[1] = (j + 0.5) * inv_dy
 
