@@ -15,6 +15,7 @@ cimport numpy as np
 import numpy as np
 
 from libc.stdlib cimport malloc
+from libc.math cimport floor
 
 from yt.utilities.lib.fp_utils cimport *
 from yt.utilities.lib.geometry_utils cimport encode_morton_64bit
@@ -371,11 +372,9 @@ cdef class BaseNeighbourVisitor(OctVisitor):
     cdef void set_neighbour_info(self, Oct *o, int ishift[3]):
         cdef int i
         cdef np.float64_t c, dx
-        cdef np.int64_t ipos
         cdef np.float64_t fcoords[3]
         cdef Oct *neighbour
         cdef bint local_oct
-        cdef bint other_oct
         local_oct = True
 
         # Compute position of neighbouring cell
@@ -384,46 +383,27 @@ cdef class BaseNeighbourVisitor(OctVisitor):
             c = <np.float64_t> (self.pos[i] * self.nz[i])
             fcoords[i] = (c + 0.5 + ishift[i]) * dx / self.octree.nn[i]
             # Assuming periodicity
-            if fcoords[i] < 0:
-                fcoords[i] += 1
-            elif fcoords[i] > 1:
-                fcoords[i] -= 1
-            local_oct &= (0 <= ishift[i] <= 1)
-        other_oct = not local_oct
+            fcoords[i] -= floor(fcoords[i])
+            fcoords[i] = self.octree.DLE[i] + fcoords[i] * (self.octree.DRE[i] - self.octree.DLE[i])
+            local_oct &= (0 <= ishift[i] < self.nz[i])
+        self.other_oct = not local_oct
 
         # Use octree to find neighbour
-        if other_oct:
+        if self.other_oct:
             neighbour = self.octree.get(fcoords, &self.oi, max_level=self.level)
         else:
             neighbour = o
             self.oi.level = self.level
-            for i in range(3):
-                self.oi.ipos[i] = (self.pos[i] * self.nz[i]) + ishift[i]
-
-        # Extra step - compute cell position in neighbouring oct (and store in oi.ipos)
-        if self.oi.level == self.level - 1:
-            for i in range(3):
-                ipos = (((self.pos[i] * self.nz[i]) + ishift[i])) >> 1
-                if (self.oi.ipos[i] << 1) == ipos:
-                    self.oi.ipos[i] = 0
-                else:
-                    self.oi.ipos[i] = 1
         self.neighbour = neighbour
 
         # Index of neighbouring cell within its oct
         for i in range(3):
-            self.neigh_ind[i] = <np.uint32_t>(ishift[i]) % 2
-
-        self.other_oct = other_oct
-        if other_oct:
-            if self.neighbour != NULL:
-                if self.oi.level == self.level - 1:
-                    # Position within neighbouring oct is stored in oi.ipos
-                    for i in range(3):
-                        self.neigh_ind[i] = self.oi.ipos[i]
-                elif self.oi.level != self.level:
-                    print('This should not happen! %s %s' % (self.oi.level, self.level))
-                    self.neighbour = NULL
+            if local_oct:
+                self.neigh_ind[i] = ishift[i]
+            elif neighbour != NULL:
+                self.neigh_ind[i] = <np.uint32_t>iclip(
+                    <int>floor((fcoords[i] - self.oi.left_edge[i]) / self.oi.dds[i]),
+                    0, self.nz[i] - 1)
 
 # Store neighbouring cell index in current cell
 cdef class NeighbourCellIndexVisitor(BaseNeighbourVisitor):
@@ -462,13 +442,13 @@ cdef class NeighbourCellIndexVisitor(BaseNeighbourVisitor):
 
         cdef int i0, i1
         i0 = -self.n_ghost_zones
-        i1 = 2 + self.n_ghost_zones
+        i1 = self.nz[0] + self.n_ghost_zones
         # Loop over cells in and directly around oct
         for i in range(i0, i1):
             ishift[0] = i
-            for j in range(i0, i1):
+            for j in range(i0, self.nz[1] + self.n_ghost_zones):
                 ishift[1] = j
-                for k in range(i0, i1):
+                for k in range(i0, self.nz[2] + self.n_ghost_zones):
                     ishift[2] = k
                     self.set_neighbour_info(o, ishift)
 
@@ -480,7 +460,7 @@ cdef class NeighbourCellIndexVisitor(BaseNeighbourVisitor):
                         neigh_cell_ind   = self.neighbour_rind()
                     else:
                         neigh_domain_ind = -1
-                        neigh_cell_ind   = 8
+                        neigh_cell_ind   = self.nzones
 
                     self.cell_inds[self.index]   = neigh_cell_ind
                     self.domain_inds[self.index] = neigh_domain_ind
@@ -508,13 +488,13 @@ cdef class NeighbourCellVisitor(BaseNeighbourVisitor):
 
         cdef int i0, i1
         i0 = -self.n_ghost_zones
-        i1 = 2 + self.n_ghost_zones
+        i1 = self.nz[0] + self.n_ghost_zones
         # Loop over cells in and directly around oct
         for i in range(i0, i1):
             ishift[0] = i
-            for j in range(i0, i1):
+            for j in range(i0, self.nz[1] + self.n_ghost_zones):
                 ishift[1] = j
-                for k in range(i0, i1):
+                for k in range(i0, self.nz[2] + self.n_ghost_zones):
                     ishift[2] = k
                     self.set_neighbour_info(o, ishift)
 
@@ -532,7 +512,7 @@ cdef class NeighbourCellVisitor(BaseNeighbourVisitor):
                         neigh_level    = 255
                         neigh_domain   = -1
                         neigh_file_ind = -1
-                        neigh_cell_ind = 8
+                        neigh_cell_ind = self.nzones
 
                     self.levels[self.index]    = neigh_level
                     self.file_inds[self.index] = neigh_file_ind

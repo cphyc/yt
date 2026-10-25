@@ -409,7 +409,7 @@ cdef class OctreeContainer:
         cdef np.ndarray[np.uint8_t, ndim=4] mask
         cdef oct_visitors.MaskOcts visitor
         visitor = oct_visitors.MaskOcts(self, domain_id)
-        mask = np.zeros((num_cells, self.nz[0], self.nz[1], self.nz[2]), dtype="uint8")
+        mask = np.zeros((num_cells, self.nz[2], self.nz[1], self.nz[0]), dtype="uint8")
         visitor.mask = mask
         self.visit_all_octs(selector, visitor)
         return mask.astype("bool")
@@ -824,8 +824,11 @@ cdef class OctreeContainer:
         cdef np.uint32_t[::1] cell_inds
         cdef np.int64_t[::1] oct_inds
 
-        cell_inds = np.full(num_octs*4**3, self.nz[0] * self.nz[1] * self.nz[2], dtype=np.uint32)
-        oct_inds = np.full(num_octs*4**3, -1, dtype=np.int64)
+        num_cells = num_octs
+        for axis in range(3):
+            num_cells *= self.nz[axis] + 2 * n_ghost_zones
+        cell_inds = np.full(num_cells, self.nz[0] * self.nz[1] * self.nz[2], dtype=np.uint32)
+        oct_inds = np.full(num_cells, -1, dtype=np.int64)
 
         visitor = NeighbourCellIndexVisitor(self, -1, n_ghost_zones)
         visitor.cell_inds = cell_inds
@@ -881,7 +884,7 @@ cdef class OctreeContainer:
     @cython.cdivision(True)
     def file_index_octs_with_ghost_zones(
             self, SelectorObject selector, int domain_id,
-            int num_cells=1, int n_ghost_zones=1):
+            int num_cells=-1, int n_ghost_zones=1):
         """Similar as file_index_octs, but returns the level, cell index,
         file index and domain of the neighbouring cells as well.
 
@@ -931,7 +934,9 @@ cdef class OctreeContainer:
         cdef int num_octs
         if num_cells < 0:
             num_octs = selector.count_octs(self, domain_id)
-            num_cells = num_octs * 4**3
+            num_cells = num_octs
+            for axis in range(3):
+                num_cells *= self.nz[axis] + 2 * n_ghost_zones
         cdef NeighbourCellVisitor visitor
 
         cdef np.ndarray[np.uint8_t, ndim=1] levels

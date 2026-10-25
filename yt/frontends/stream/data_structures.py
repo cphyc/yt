@@ -771,7 +771,9 @@ class StreamOctreeSubset(OctreeSubset):
     _domain_offset = 1
 
     def __init__(self, base_region, ds, oct_handler, num_zones=2, num_ghost_zones=0):
-        self._num_zones = num_zones
+        self._num_zones = np.broadcast_to(
+            np.asarray(num_zones, dtype="int64"), (3,)
+        ).copy()
         self.field_data = YTFieldData()
         self.field_parameters = {}
         self.ds = ds
