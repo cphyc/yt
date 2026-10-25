@@ -1103,7 +1103,7 @@ def load_octree(
     default_species_fields : string, optional
         If set, default species fields are created for H and He which also
         determine the mean molecular weight. Options are "ionized" and "neutral".
-    num_zones : int
+    num_zones : int or three integers
         The number of zones along each dimension in an oct
     parameters: dictionary, optional
         Optional dictionary used to populate the dataset parameters, useful
@@ -1154,7 +1154,7 @@ def load_octree(
     if domain_dimensions is None:
         # We assume that if it isn't specified, it defaults to the number of
         # zones (i.e., a single root oct.)
-        domain_dimensions = np.array([nz, nz, nz])
+        domain_dimensions = np.broadcast_to(np.asarray(nz, dtype="int64"), (3,)).copy()
     else:
         domain_dimensions = np.array(domain_dimensions)
     nprocs = 1

@@ -541,22 +541,11 @@ class RAMSESDomainSubset(OctreeSubset):
         if num_ghost_zones == 0:
             return super().fcoords
 
-        oh = self.oct_handler
-
-        indices = oh.fill_index(self.selector).reshape(-1, 8)
-        oct_inds, cell_inds = oh.fill_octcellindex_neighbours(
-            self.selector, self._num_ghost_zones
-        )
-
-        N_per_oct = int(np.prod(self.nz))
-        oct_inds = oct_inds.reshape(-1, N_per_oct)
-        cell_inds = cell_inds.reshape(-1, N_per_oct)
-
-        inds = indices[oct_inds, cell_inds]
-
-        fcoords = self.ds.arr(oh.fcoords(self.selector)[inds].reshape(-1, 3), "unitary")
-
-        return fcoords
+        cells_per_oct = int(np.prod(self._num_zones))
+        centers = super().fcoords.reshape(-1, cells_per_oct, 3)[:, 0, :]
+        widths = super().fwidth.reshape(-1, cells_per_oct, 3)[:, 0, :]
+        offsets = np.indices(self.nz).reshape(3, -1).T - num_ghost_zones
+        return (centers[:, None, :] + widths[:, None, :] * offsets).reshape(-1, 3)
 
     def fill(self, fd, fields, selector, file_handler):
         if self._num_ghost_zones == 0:

@@ -813,6 +813,32 @@ class StreamOctreeSubset(OctreeSubset):
 
         return new_subset
 
+    @cached_property
+    def _ghost_zone_geometry(self):
+        cells_per_leaf = int(np.prod(self._num_zones))
+        widths = self._base_grid.fwidth.to_value("code_length").reshape(
+            -1, cells_per_leaf, 3
+        )[:, 0, :]
+        centers = self._base_grid.fcoords.to_value("code_length").reshape(
+            -1, cells_per_leaf, 3
+        )[:, 0, :]
+        offsets = np.indices(self.nz).reshape(3, -1).T - self._num_ghost_zones
+        positions = centers[:, None, :] + widths[:, None, :] * offsets
+        widths = np.broadcast_to(widths[:, None, :], positions.shape).copy()
+        return positions.reshape(-1, 3), widths.reshape(-1, 3)
+
+    @property
+    def fcoords(self):
+        if self._num_ghost_zones:
+            return self.ds.arr(self._ghost_zone_geometry[0], "code_length")
+        return super().fcoords
+
+    @property
+    def fwidth(self):
+        if self._num_ghost_zones:
+            return self.ds.arr(self._ghost_zone_geometry[1], "code_length")
+        return super().fwidth
+
     def _fill_no_ghostzones(self, content, dest, selector, offset):
         # Here we get a copy of the file, which we skip through and read the
         # bits we want.
@@ -846,13 +872,45 @@ class StreamOctreeSubset(OctreeSubset):
                 file_inds,
                 domains,
             ) = oct_handler.file_index_octs_with_ghost_zones(
-                selector, self.domain_id, cell_count
+                selector, self.domain_id, cell_count, self._num_ghost_zones
+            )
+            nx, ny, nz = self._num_zones
+            cell_inds[:] = (
+                (cell_inds % nx) * ny * nz
+                + (cell_inds // nx % ny) * nz
+                + cell_inds // (nx * ny)
             )
             self._ghost_zone_cache = gz_cache
         levels[:] = 0
         dest.update((field, np.empty(cell_count, dtype="float64")) for field in content)
         # Make references ...
         oct_handler.fill_level(0, levels, cell_inds, file_inds, dest, content, offset)
+        # Stream octrees do not store the covered coarse-cell values that
+        # neighbouring octs need for ghost zones. Restrict the leaf values.
+        missing = np.flatnonzero(file_inds < 0)
+        if missing.size:
+            positions, widths = self._ghost_zone_geometry
+            cache = {}
+            for i in missing:
+                center = positions[i]
+                width = widths[i]
+                key = tuple(center) + tuple(width)
+                if key not in cache:
+                    region = self.ds.box(center - width / 2, center + width / 2)
+                    volume = region["index", "cell_volume"]
+                    total_volume = volume.sum()
+                    cache[key] = (
+                        {
+                            field: (region[field] * volume).sum() / total_volume
+                            for field in content
+                        }
+                        if total_volume > 0
+                        else {}
+                    )
+                for field, value in cache[key].items():
+                    dest[field][i + offset] = value.to_value(
+                        self.ds._get_field_info(field).units
+                    )
 
     def fill(self, content, dest, selector, offset):
         if self._num_ghost_zones == 0:
@@ -895,6 +953,7 @@ class StreamOctreeHandler(OctreeIndex):
                     self.dataset,
                     self.oct_handler,
                     self.ds.num_zones,
+                    num_ghost_zones=dobj._num_ghost_zones,
                 )
             ]
             dobj._chunk_info = subset
