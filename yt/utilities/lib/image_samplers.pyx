@@ -365,6 +365,9 @@ cdef class InterpolatedProjectionSampler(ImageSampler):
         self.vra.n_samples = n_samples
         self.supp_data = <void *> self.vra
 
+    def __dealloc__(self):
+        free(self.vra)
+
     @cython.boundscheck(False)
     @cython.wraparound(False)
     @cython.cdivision(True)
