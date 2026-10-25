@@ -386,6 +386,9 @@ cdef class InterpolatedProjectionSampler(ImageSampler):
         # we assume this has vertex-centered data.
         cdef int offset = index[0] * (vc.dims[1] + 1) * (vc.dims[2] + 1) \
                         + index[1] * (vc.dims[2] + 1) + index[2]
+        cdef int cell_offset = (index[0] * vc.dims[1] + index[1]) * vc.dims[2] + index[2]
+        if vc.mask[cell_offset] != 1:
+            return
         cdef np.float64_t dp[3]
         cdef np.float64_t ds[3]
         cdef np.float64_t dt = (exit_t - enter_t) / vri.n_samples

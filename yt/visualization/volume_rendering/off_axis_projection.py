@@ -1,6 +1,9 @@
+from itertools import product
+
 import numpy as np
 
 from yt.data_objects.api import ImageArray
+from yt.data_objects.data_containers import YTDataContainer
 from yt.funcs import is_sequence, mylog
 from yt.geometry.oct_geometry_handler import OctreeIndex
 from yt.units.unit_object import Unit  # type: ignore
@@ -76,11 +79,13 @@ def off_axis_projection(
         lead to large speed improvements, but at a loss of
         accuracy/smoothness in resulting image.  The effects are
         less notable when the transfer function is smooth and
-        broad. Default: True
+        broad. Ignored for octree datasets, whose vertex reconstruction always
+        uses ghost zones. Default: False
     interpolated : optional, default False
         If True, the data is first interpolated to vertex-centered data,
-        then tri-linearly interpolated along the ray. Not suggested for
-        quantitative studies.
+        then trilinearly interpolated along each ray. Octrees use cell stamps.
+        Requires method="integrate". This smooths cell boundaries but is not
+        strictly conservative.
     north_vector : optional, array_like, default None
         A vector that, if specified, restricts the orientation such that the
         north vector dotted into the image plane points "up". Useful for rotations
@@ -130,13 +135,17 @@ def off_axis_projection(
             "Only 'integrate' or 'sum' methods are valid for off-axis-projections"
         )
 
-    if interpolated:
-        raise NotImplementedError(
-            "Only interpolated=False methods are currently implemented "
-            "for off-axis-projections"
-        )
-
     data_source = data_source_or_all(data_source)
+
+    if interpolated:
+        if method != "integrate":
+            raise NotImplementedError(
+                "Interpolated projections require method='integrate'"
+            )
+        if hasattr(data_source.ds, "_sph_ptypes"):
+            raise NotImplementedError(
+                "Interpolated projections are not supported for SPH"
+            )
 
     item = data_source._determine_fields([item])[0]
 
@@ -412,7 +421,10 @@ def off_axis_projection(
 
     sc.add_source(vol)
 
-    vol.set_sampler(camera, interpolated=False)
+    vol.set_sampler(
+        camera,
+        interpolated=interpolated and not isinstance(data_source.ds.index, OctreeIndex),
+    )
     assert vol.sampler is not None
 
     fields = [vol.field]
@@ -423,19 +435,9 @@ def off_axis_projection(
     index = data_source.ds.index
     lens = camera.lens
 
-    # This implementation is optimized for octrees with plane-parallel lenses
-    # and implicitely assumes that the cells are cubic.
-    # NOTE: we should be able to relax the cubic assumption to a rectangular
-    #       assumption (if all cells have the same aspect ratio) with some
-    #       renormalization of the coordinates and the projection axes.
-    #       This is NOT done in the following.
-    dom_width = data_source.ds.domain_width
-    cubic_domain = dom_width.max() == dom_width.min()
-    if (
-        isinstance(index, OctreeIndex)
-        and isinstance(lens, PlaneParallelLens)
-        and cubic_domain
-    ):
+    # Octree stamps share a fixed cell aspect ratio across refinement levels.
+    if isinstance(index, OctreeIndex) and isinstance(lens, PlaneParallelLens):
+        projection_fields = fields.copy()
         fields.extend(("index", k) for k in "xyz")
         fields.append(("index", "dx"))
 
@@ -465,8 +467,21 @@ def off_axis_projection(
 
         dx = (data_source["index", "dx"] / wmax).to("1").d
 
+        base_width = (
+            data_source.ds.domain_width.to_value("code_length")
+            / data_source.ds.domain_dimensions
+        )
+        cell_aspect = np.ascontiguousarray(base_width / base_width[0])
+        if interpolated:
+            vertex_fields = _octree_vertex_data(data_source, projection_fields)
+            quantity = vertex_fields[vol.field]
+        else:
+            quantity = data_source[vol.field]
+
         if vol.weight_field is None:
-            weight_field = np.ones_like(dx)
+            weight_field = np.ones_like(quantity)
+        elif interpolated:
+            weight_field = vertex_fields[vol.weight_field]
         else:
             weight_field = data_source[vol.weight_field]
 
@@ -476,13 +491,14 @@ def off_axis_projection(
         add_cells_to_image_offaxis(
             Xp=xyz,
             dXp=dx,
-            qty=data_source[vol.field],
+            qty=quantity,
             weight=weight_field,
             rotation=camera.inv_mat.T,
             buffer=projected_weighted_qty,
             buffer_weight=projected_weight,
             Nx=resolution[0],
             Ny=resolution[1],
+            cell_aspect=cell_aspect,
         )
         # Note: since dx was divided by wmax, we need to rescale by it
         projected_weighted_qty *= wmax.d / np.sqrt(3)
@@ -503,25 +519,30 @@ def off_axis_projection(
             data_source.clear_data(weightfield)
 
     else:
-        for grid, mask in data_source.blocks:
-            data = []
-            for f in fields:
-                # strip units before multiplying by mask for speed
-                grid_data = grid[f]
-                units = grid_data.units
-                data.append(
-                    data_source.ds.arr(grid_data.d * mask, units, dtype="float64")
-                )
-            pg = PartitionedGrid(
-                grid.id,
-                data,
-                mask.astype("uint8"),
-                grid.LeftEdge,
-                grid.RightEdge,
-                grid.ActiveDimensions.astype("int64"),
+        if interpolated:
+            _interpolated_projection(
+                data_source, vol, camera, fields, no_ghost, num_threads
             )
-            grid.clear_data()
-            vol.sampler(pg, num_threads=num_threads)
+        else:
+            for grid, mask in data_source.blocks:
+                data = []
+                for f in fields:
+                    # strip units before multiplying by mask for speed
+                    grid_data = grid[f]
+                    units = grid_data.units
+                    data.append(
+                        data_source.ds.arr(grid_data.d * mask, units, dtype="float64")
+                    )
+                pg = PartitionedGrid(
+                    grid.id,
+                    data,
+                    mask.astype("uint8"),
+                    grid.LeftEdge,
+                    grid.RightEdge,
+                    grid.ActiveDimensions.astype("int64"),
+                )
+                grid.clear_data()
+                vol.sampler(pg, num_threads=num_threads)
 
         image = vol.finalize_image(camera, vol.sampler.aimage)
 
@@ -545,3 +566,100 @@ def off_axis_projection(
             image[mask] = 0
 
     return image[:, :, 0]
+
+
+def _interpolated_projection(data_source, vol, camera, fields, no_ghost, num_threads):
+    ds = data_source.ds
+    domain_width = ds.domain_width.to_value("code_length")
+    half_width = (
+        np.abs(camera.unit_vectors).T @ camera.width.to_value("code_length") / 2
+    )
+    view_left = camera.focus.to_value("code_length") - half_width
+    view_right = camera.focus.to_value("code_length") + half_width
+
+    for grid, mask in YTDataContainer.blocks.fget(data_source):
+        if not mask.any():
+            continue
+        left = grid.LeftEdge.to_value("code_length")
+        right = grid.RightEdge.to_value("code_length")
+        shifts = []
+        for axis, periodic in enumerate(ds.periodicity):
+            if periodic:
+                first = int(
+                    np.ceil((view_left[axis] - right[axis]) / domain_width[axis])
+                )
+                last = int(
+                    np.floor((view_right[axis] - left[axis]) / domain_width[axis])
+                )
+                shifts.append(range(first, last + 1))
+            elif right[axis] <= view_left[axis] or left[axis] >= view_right[axis]:
+                shifts.append(range(0))
+            else:
+                shifts.append(range(1))
+        if any(len(shift) == 0 for shift in shifts):
+            continue
+
+        data = []
+        for field in fields:
+            vertices = grid.get_vertex_centered_data([field], no_ghost=no_ghost)[field]
+            units = ds._get_field_info(field).units
+            data.append(np.ascontiguousarray(vertices.to_value(units), dtype="float64"))
+        mask = np.ascontiguousarray(mask, dtype="uint8")
+        for shift in product(*shifts):
+            offset = np.asarray(shift) * domain_width
+            pg = PartitionedGrid(
+                grid.id,
+                data,
+                mask,
+                left + offset,
+                right + offset,
+                grid.ActiveDimensions.astype("int64"),
+            )
+            vol.sampler(pg, num_threads=num_threads)
+        grid.clear_data()
+
+
+def _octree_vertex_data(data_source, fields):
+    """Return eight physical x/y/z vertex values for each selected octree cell."""
+    pieces = {field: [] for field in fields}
+    for _io_chunk in data_source.chunks([], "io"):
+        for _chunk in data_source.chunks([], "spatial"):
+            subset = data_source._current_chunk.objs[0]
+            subset.field_parameters.update(data_source.field_parameters)
+            nz = np.broadcast_to(np.asarray(subset._num_zones, dtype=int), (3,))
+            mask = (
+                subset.oct_handler.mask(
+                    data_source.selector,
+                    domain_id=subset.domain_id,
+                )
+                .transpose(0, 3, 2, 1)
+                .reshape(-1)
+            )
+            if not mask.any():
+                continue
+            ghost = subset.retrieve_ghost_zones(1, fields)
+            ghost.field_parameters.update(data_source.field_parameters)
+            for field in fields:
+                units = data_source.ds._get_field_info(field).units
+                values = np.asarray(ghost[field].to_value(units)).ravel(order="F")
+                values = values.reshape((-1, *(nz + 2)))
+                vertices = np.zeros((len(values), *(nz + 1)))
+                for corner in product(range(2), repeat=3):
+                    sl = tuple(
+                        slice(c, c + int(n) + 1)
+                        for c, n in zip(corner, nz, strict=True)
+                    )
+                    vertices += values[(slice(None), *sl)] * 0.125
+                selected = np.empty((int(mask.sum()), 2, 2, 2))
+                for corner in product(range(2), repeat=3):
+                    sl = tuple(
+                        slice(c, c + int(n)) for c, n in zip(corner, nz, strict=True)
+                    )
+                    selected[(slice(None), *corner)] = vertices[
+                        (slice(None), *sl)
+                    ].reshape(-1)[mask]
+                pieces[field].append(selected)
+    return {
+        field: np.concatenate(parts) if parts else np.empty((0, 2, 2, 2))
+        for field, parts in pieces.items()
+    }

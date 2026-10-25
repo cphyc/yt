@@ -2387,6 +2387,11 @@ class OffAxisProjectionPlot(ProjectionPlot, PWViewerMPL):
         key of the unit: (width, 'unit'). If set to a float, code units
         are assumed. In not set, then a depth equal to the diagonal of
         the domain width plus a small margin will be used.
+    interpolated : bool, optional
+        If True, reconstruct vertex values using neighbouring cells and
+        trilinearly interpolate along projection rays. Octrees use cell stamps.
+        Requires method="integrate" and, for octrees, no_ghost=False.
+        Defaults to False.
     weight_field : string
         The name of the weighting field.  Set to None for no weight.
     max_level: int
